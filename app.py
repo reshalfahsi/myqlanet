@@ -80,16 +80,11 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         img = self.images[self.current_idx]
         target_size = (581, 441)
         img_size = (img.shape[0], img.shape[1])
-        #print(img_size)
-        #print(target_size)
         scaledX = img_size[0]/target_size[0]
         scaledY = img_size[1]/target_size[1]
-        #print(scaledX, scaledY)
         annotation_box = self.annotate_canvas_img.getRect()
         point = [annotation_box[0], annotation_box[1]]
         wh = [annotation_box[2], annotation_box[3]]
-        #print(point)
-        #print(wh)
         if(wh[0] < 0 and wh[1] < 0):
             point[0] += wh[0]
             point[1] += wh[1]
@@ -101,8 +96,6 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         elif(wh[0] > 0 and wh[1] < 0):
             point[1] += wh[1]
             wh[1] = abs(wh[1])
-        #print(point)
-        #print(wh)
         point[0] *= scaledX
         point[0] = int(point[0])
         point[1] *= scaledY
@@ -111,16 +104,15 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         wh[0] = int(wh[0])
         wh[1] *= scaledY
         wh[1] = int(wh[1])
-        self.annotation_data[self.current_idx] = str(self.images_names[self.current_idx] + ', ' + str(point[0]) + ', ' + str(point[1]) + ', ' + str(wh[0]) + ', ' + str(wh[1]) + '\n')
-        #csv_file = open(self.metadata_path, "a")
-        #csv_file.write(self.images_names[self.current_idx] + ', ' + str(point[0]) + ', ' + str(point[1]) + ', ' + str(wh[0]) + ', ' + str(wh[1]) + '\n')
-        #csv_file.close()
+        endpoint = (point[0] + wh[0], point[1] + wh[1])
+        self.annotation_data[self.current_idx] = str( str(self.current_idx) + ', ' + self.images_names[self.current_idx] + ', ' + str(endpoint[1]) + ', ' + str(endpoint[0]) + ', ' + str(point[1]) + ', ' + str(point[0]) + '\n')
 
     def save_annotate(self):
         for data in self.annotation_data:
             csv_file = open(self.metadata_path, "a")
             csv_file.write(data)
             csv_file.close()
+        print("Annotation Data Saved!")
 
     def train(self):
         pass
@@ -173,6 +165,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             if(os.path.exists(self.metadata_path)):
                 os.remove(self.metadata_path)
             csv_file = open(self.metadata_path, "w")
+            csv_file.write('img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
             csv_file.close() 
             #print(self.filenames)
             self.image_adjustment.setPath(self.filenames)
