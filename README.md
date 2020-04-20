@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/reshalfahsi/nightowl_ws.svg)](https://travis-ci.org/reshalfahsi/nightowl_ws)
 # MyQLaNet
 
 <div align="center">
@@ -10,8 +11,7 @@ It provide end to end system for macula detection with graphical user interface.
 
 ## Instalation
 
-Ubuntu Linux
-^^^^^^^^^^^^
+**Ubuntu Linux**
 
 Python 3 + Qt5
 
