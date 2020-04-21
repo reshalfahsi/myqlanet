@@ -14,7 +14,10 @@ except ImportError:
     print("Please Use PyQt5!")
 
 from libs.main import *
+from libs import *
 from myqlanet import *
+
+#ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class MyQLaGUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -22,17 +25,18 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.filenames = ''
         self.current_idx = 0
         self.total_idx = 0
+        self.total_predict_idx = 0
+        self.current_predict_idx = 0
         self.valid_image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
         self.images_names = []
         self.annotation_data = []
-        self.image_to_predict = None
+        self.images_to_predict = None
+        self.images_to_predict_names = []
         self.isPredictFolder = False
         self.setupUi(self)
         self.setFixedSize(self.size())
         pixmap = QPixmap(self.myqlanet_pixmap_path)
-        #print(pixmap.size().height(), pixmap.size().width())
         self.myqlaimg_annotate.setPixmap(pixmap)
-        #print(self.myqlaimg_annotate.size().height(), self.myqlaimg_annotate.size().width())
         self.myqlaimg_annotate.setScaledContents(True)
         self.myqlaimg_predict.setPixmap(pixmap)
         self.myqlaimg_predict.setScaledContents(True)
@@ -58,17 +62,42 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.save_predict_button.clicked.connect(self.save_predict)
         self.save_train_button.clicked.connect(self.save_train)
         self.annotate_canvas_img.setActive(False)
-        self.image_adjustment = ImageAdjustment()
         self.metadata_path = ''
         self.images = []
+        
+        #MyQLaNet tools
+        self.myqlanet = MyQLaNet()
+        self.ggb = GGB()
+        self.image_adjustment = ImageAdjustment()
+        self.dataset_adjustment = DatasetAdjustment()
 
     def prev_predict(self):
         if(self.isPredictFolder):
-            pass
+            self.current_predict_idx -= 1
+            if(self.current_predict_idx < 0):
+                self.current_predict_idx = 0
+            self.current_predict.setText("Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
+            if (len(self.images_to_predict_names) > 0):
+                height, width, channel = self.images_to_predict[self.current_predict_idx].shape
+                bytesPerLine = 3 * width
+                qImg = QImage(self.images_to_predict[self.current_predict_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(qImg)
+                self.imshow_predict.setPixmap(pixmap)
+                self.imshow_predict.setScaledContents(True)
 
     def next_predict(self):
         if(self.isPredictFolder):
-            pass
+            self.current_predict_idx += 1
+            if(self.current_predict_idx > self.total_predict_idx):
+                self.current_predict_idx = self.total_predict_idx
+            self.current_predict.setText("Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
+            if (len(self.images_to_predict_names) > 0):
+                height, width, channel = self.images_to_predict[self.current_predict_idx].shape
+                bytesPerLine = 3 * width
+                qImg = QImage(self.images_to_predict[self.current_predict_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(qImg)
+                self.imshow_predict.setPixmap(pixmap)
+                self.imshow_predict.setScaledContents(True)
 
     def save_predict(self):
         pass
@@ -159,31 +188,27 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.images_names = []
             self.annotation_data = []
             self.total_idx = 0
-            self.filenames = dlg.selectedFiles()
-            self.filenames = self.filenames[0]
-            self.metadata_path = os.path.join(self.filenames, "annotation.csv")
+            filenames = dlg.selectedFiles()
+            filenames = filenames[0]
+            self.metadata_path = os.path.join(filenames, "annotation.csv")
             if(os.path.exists(self.metadata_path)):
                 os.remove(self.metadata_path)
             csv_file = open(self.metadata_path, "w")
             csv_file.write('img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
             csv_file.close() 
-            #print(self.filenames)
-            self.image_adjustment.setPath(self.filenames)
+            self.image_adjustment.setPath(filenames)
             self.images = self.image_adjustment.getResult()
-            for file in os.listdir(self.filenames):
+            for file in os.listdir(filenames):
                 if any(file.endswith(ext) for ext in self.valid_image_extensions):
-                    name = file #os.path.join(self.filenames, file)
+                    name = file
                     self.images_names.append(name)
                     self.total_idx += 1
-                    #print(name)
                     self.annotation_data.append('0, 0, 0, 0')
             self.current_idx = 0
             if(self.total_idx > 0):
                 self.total_idx -= 1
             self.total_annotate.setText("Total : " + str(self.total_idx + 1))
             self.current_annotate.setText("Current : " + str(self.current_idx + 1) + '/' + str(self.total_idx + 1))
-            #pixmap = QPixmap(self.images_names[self.current_idx])
-            #self.annotate_img.setPixmap(pixmap)
             height, width, channel = self.images[self.current_idx].shape
             bytesPerLine = 3 * width
             qImg = QImage(self.images[self.current_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
@@ -192,16 +217,36 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.annotate_img.setScaledContents(True)
 
     def getfilePredict(self):
-        dlg = QFileDialog()
-        dlg.setFileMode(QFileDialog.AnyFile)
-		
-        if dlg.exec_():
-            self.filenames = dlg.selectedFiles()
-            self.filenames = self.filenames[0]
-            #print(self.filenames)
+        dlg = OpenFile(self)
+        dlg.exec_()
+        self.filenames = dlg.getFileName()
+        if(os.path.isdir(self.filenames)):
+            self.images_to_predict = []
+            self.images_to_predict_names = []
+            self.total_predict_idx = 0
+            self.isPredictFolder = True
+            for file in os.listdir(self.filenames):
+                if any(file.endswith(ext) for ext in self.valid_image_extensions):
+                    self.total_predict_idx += 1
+                    name = file
+                    self.images_to_predict_names.append(name)
+                    temp = cv2.imread(os.path.join(self.filenames,name))
+                    self.images_to_predict.append(temp)
+            self.current_predict_idx = 0
+            if(self.total_predict_idx > 0):
+                self.total_predict_idx -= 1
+            self.total_predict.setText("Total : " + str(self.total_predict_idx + 1))
+            self.current_predict.setText("Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
+            height, width, channel = self.images_to_predict[self.current_predict_idx].shape
+            bytesPerLine = 3 * width
+            qImg = QImage(self.images_to_predict[self.current_predict_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+            pixmap = QPixmap.fromImage(qImg)
+            self.imshow_predict.setPixmap(pixmap)
+            self.imshow_predict.setScaledContents(True)
+        else:
+            self.isPredictFolder = False
             temp = os.path.splitext(self.filenames)
             extension = temp[1]
-            #print(extension)
             if(extension in self.valid_image_extensions):
                 pixmap = QPixmap(self.filenames)
                 self.imshow_predict.setPixmap(pixmap)
@@ -209,6 +254,11 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.image_to_predict = cv2.imread(self.filenames)
             else:
                 print('File is not a Valid Image!')
+
+        self.next_predict_button.setVisible(self.isPredictFolder)
+        self.prev_predict_button.setVisible(self.isPredictFolder)
+        self.total_predict.setVisible(self.isPredictFolder)
+        self.current_predict.setVisible(self.isPredictFolder)
 
     def getfileTrain(self):
         dlg = QFileDialog()

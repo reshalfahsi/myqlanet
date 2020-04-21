@@ -11,13 +11,29 @@ def predict(model, path, cuda):
 
     model.eval()
 
-    result = []
+    result = None
     # Get Batch
-    for file in os.listdir(path):
-        if any(file.endswith(ext) for ext in valid_image_extensions):
-            img_name = file
-            img_path = os.path.join(path, img_name)
-            image = cv2.imread(img_path)
+    if(os.path.isdir(path)):
+        result = []
+        for file in os.listdir(path):
+            if any(file.endswith(ext) for ext in valid_image_extensions):
+                img_name = file
+                img_path = os.path.join(path, img_name)
+                image = cv2.imread(img_path)
+                image_tensor = image.transpose((2, 0, 1))
+                if cuda: 
+                    image_tensor = torch.from_numpy(image_tensor).float().to('cuda')
+                else:
+                    image_tensor = torch.from_numpy(image_tensor).float()
+                image_tensor = image_tensor.unsqueeze(0)
+                image_tensor = Variable(image_tensor)
+                output = model(image_tensor)
+                result.append(output)
+    else:
+        temp = os.path.splitext(self.filenames)
+        extension = temp[1]
+        if(extension in self.valid_image_extensions):
+            image = cv2.imread(path)
             image_tensor = image.transpose((2, 0, 1))
             if cuda: 
                 image_tensor = torch.from_numpy(image_tensor).float().to('cuda')
@@ -26,5 +42,5 @@ def predict(model, path, cuda):
             image_tensor = image_tensor.unsqueeze(0)
             image_tensor = Variable(image_tensor)
             output = model(image_tensor)
-            result.append(output)
+            result = output
     return result

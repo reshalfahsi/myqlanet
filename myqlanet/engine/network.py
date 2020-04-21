@@ -6,13 +6,15 @@ from . import train_engine
 from . import predict_engine
 import os
 from ..preprocessing import MaculaDataset
+from ..utils import dataset_util
 
 class MyQLaNet(nn.Module):
     """
     Deep Learning Model for MyQLaNet
     """
-    def __init__(self, num_output):
+    def __init__(self):
         super(MyQLaNet, self).__init__()
+        self.num_output = 4
         self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride = 2, padding=1)
@@ -24,7 +26,7 @@ class MyQLaNet(nn.Module):
         self.fc1 = nn.Linear(704, 128)
         #self.fc1 = nn.Linear(1120, 128)
         self.drop2 = nn.Dropout2d(p=0.5)
-        self.fc2 = nn.Linear(128, num_output)
+        self.fc2 = nn.Linear(128, self.num_output)
         self.iscuda = torch.cuda.is_available()
         if self.iscuda:
             self.cuda()
@@ -42,7 +44,6 @@ class MyQLaNet(nn.Module):
         self.start_epoch = 0
         self.train_dataset = None
         self.test_dataset = None
-        self.num_output = num_output
         
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -60,11 +61,21 @@ class MyQLaNet(nn.Module):
         x = self.fc2(x)
         return F.relu(x)
 
-    def compile(self,train_dataset, test_dataset):
+    def compile(self, *dataset):
+        """
+        """
+        if (len(dataset==0)):
+            print("Please Insert Path!")
+        elif (len(dataset==1)):
+            train_dataset, test_dataset = dataset_util.split_train_test(dataset[0])
+        elif (len(dataset==2)):
+            train_dataset, test_dataset = dataset[0], dataset[1]
+        else:
+            print("Argument Invalid!")
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
         self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-        test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False) 
+        self.test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False) 
 
 
     def fit(self,path = ''):

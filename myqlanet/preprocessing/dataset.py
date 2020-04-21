@@ -17,6 +17,7 @@ class MaculaDataset(Dataset):
         self.macula_frame = pd.read_csv(csv_file)
         self.root_dir = root_dir
         self.transform = transform
+        self.csv_file = csv_file
 
     def __len__(self):
         return len(self.macula_frame)
@@ -36,3 +37,6 @@ class MaculaDataset(Dataset):
             sample = self.transform(sample)
         sample = (sample['image'], sample['bbox'])
         return sample
+
+    def getDirectory(self):
+        return self.root_dir, self.csv_file

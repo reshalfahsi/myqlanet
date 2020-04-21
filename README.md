@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/reshalfahsi/nightowl_ws.svg)](https://travis-ci.org/reshalfahsi/nightowl_ws)
+[![Build Status](https://travis-ci.com/reshalfahsi/myqlanet.svg?token=VeywGWKntUx4TytDJzYs&branch=master)](https://travis-ci.org/reshalfahsi/myqlanet)
 # MyQLaNet
 
 <div align="center">
@@ -7,7 +7,7 @@
 
 A Deep Learning Platform for Macula Detection.
 
-It provide end to end system for macula detection with graphical user interface.
+It provides end to end system for macula detection with graphical user interface.
 
 ## Instalation
 
