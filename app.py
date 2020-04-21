@@ -64,6 +64,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.annotate_canvas_img.setActive(False)
         self.metadata_path = ''
         self.images = []
+        self.target_size = (581, 441)
         
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
@@ -107,10 +108,9 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
 
     def set_annotate(self):
         img = self.images[self.current_idx]
-        target_size = (581, 441)
         img_size = (img.shape[0], img.shape[1])
-        scaledX = img_size[0]/target_size[0]
-        scaledY = img_size[1]/target_size[1]
+        scaledX = img_size[0]/self.target_size[0]
+        scaledY = img_size[1]/self.target_size[1]
         annotation_box = self.annotate_canvas_img.getRect()
         point = [annotation_box[0], annotation_box[1]]
         wh = [annotation_box[2], annotation_box[3]]
@@ -147,7 +147,14 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         pass
 
     def predict(self):
-        pass
+        dlg = FileMissing(self)
+        dlg.exec_()
+        changetab = dlg.isChangeTab()
+        if(changetab):
+            #print("Change Tab")
+            self.tabWidget.setCurrentIndex(0)
+        else:
+            pass
 
     def prev_pressed(self):
         self.current_idx -= 1
@@ -198,12 +205,9 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             csv_file.close() 
             self.image_adjustment.setPath(filenames)
             self.images = self.image_adjustment.getResult()
-            for file in os.listdir(filenames):
-                if any(file.endswith(ext) for ext in self.valid_image_extensions):
-                    name = file
-                    self.images_names.append(name)
-                    self.total_idx += 1
-                    self.annotation_data.append('0, 0, 0, 0')
+            self.images_names = self.image_adjustment.getNames()
+            self.total_idx = len(self.images_names)
+            self.annotation_data = self.images_names
             self.current_idx = 0
             if(self.total_idx > 0):
                 self.total_idx -= 1
@@ -225,13 +229,10 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.images_to_predict_names = []
             self.total_predict_idx = 0
             self.isPredictFolder = True
-            for file in os.listdir(self.filenames):
-                if any(file.endswith(ext) for ext in self.valid_image_extensions):
-                    self.total_predict_idx += 1
-                    name = file
-                    self.images_to_predict_names.append(name)
-                    temp = cv2.imread(os.path.join(self.filenames,name))
-                    self.images_to_predict.append(temp)
+            self.image_adjustment.setPath(self.filenames)
+            self.images_to_predict = self.image_adjustment.getResult()
+            self.images_to_predict_names = self.image_adjustment.getNames()
+            self.total_predict_idx = len(self.images_to_predict)
             self.current_predict_idx = 0
             if(self.total_predict_idx > 0):
                 self.total_predict_idx -= 1
@@ -245,15 +246,15 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.imshow_predict.setScaledContents(True)
         else:
             self.isPredictFolder = False
-            temp = os.path.splitext(self.filenames)
-            extension = temp[1]
-            if(extension in self.valid_image_extensions):
-                pixmap = QPixmap(self.filenames)
-                self.imshow_predict.setPixmap(pixmap)
-                self.imshow_predict.setScaledContents(True)
-                self.image_to_predict = cv2.imread(self.filenames)
-            else:
-                print('File is not a Valid Image!')
+            self.image_adjustment.setPath(self.filenames)
+            self.images_to_predict = self.image_adjustment.getResult()
+            self.images_to_predict_names = self.image_adjustment.getNames()
+            height, width, channel = self.images_to_predict.shape
+            bytesPerLine = 3 * width
+            qImg = QImage(self.images_to_predict.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+            pixmap = QPixmap.fromImage(qImg)
+            self.imshow_predict.setPixmap(pixmap)
+            self.imshow_predict.setScaledContents(True)
 
         self.next_predict_button.setVisible(self.isPredictFolder)
         self.prev_predict_button.setVisible(self.isPredictFolder)

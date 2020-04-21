@@ -14,11 +14,13 @@ It provides end to end system for macula detection with graphical user interface
 
 ## Dependencies
 
+* Ubuntu Linux (OS)
+* PyQt5 (GUI)
+* Python > 3.x (Programming Language)
+* PyTorch (Machine Learning Framework)
+* OpenCV (Computer Vision Framework)
+
 ## Instalation
-
-**Ubuntu Linux**
-
-Python 3 + Qt5
 
 ~~~
 sudo apt install pyqt5-dev-tools
