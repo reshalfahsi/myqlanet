@@ -3,9 +3,9 @@ from torch.utils.data import Dataset
 from skimage import io
 import numpy as np
 import pandas as pd
+from .tensor_util import ToTensor
 from ..preprocessing import MaculaDataset
-import torchvision.transforms as transforms
-from ..utils import ToTensor 
+import torchvision.transforms as transforms 
 import os
 import random
 import math

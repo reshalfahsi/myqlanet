@@ -5,9 +5,14 @@
   <img src="https://i.ibb.co/K0qkr9g/MyQLaNet.png" width = 200>
 </div>
 
+
 A Deep Learning Platform for Macula Detection.
 
 It provides end to end system for macula detection with graphical user interface.
+
+![alt text](resources/img/gui.jpg)
+
+## Dependencies
 
 ## Instalation
 
