@@ -23,6 +23,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.filenames = ''
+        self.filename_train = ''
         self.current_idx = 0
         self.total_idx = 0
         self.total_predict_idx = 0
@@ -65,6 +66,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.metadata_path = ''
         self.images = []
         self.target_size = (581, 441)
+        self.error_tab_idx = (0, 2)
         
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
@@ -107,54 +109,100 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
        pass
 
     def set_annotate(self):
-        img = self.images[self.current_idx]
-        img_size = (img.shape[0], img.shape[1])
-        scaledX = img_size[0]/self.target_size[0]
-        scaledY = img_size[1]/self.target_size[1]
-        annotation_box = self.annotate_canvas_img.getRect()
-        point = [annotation_box[0], annotation_box[1]]
-        wh = [annotation_box[2], annotation_box[3]]
-        if(wh[0] < 0 and wh[1] < 0):
-            point[0] += wh[0]
-            point[1] += wh[1]
-            wh[0] = abs(wh[0])
-            wh[1] = abs(wh[1])
-        elif(wh[0] < 0 and wh[1] > 0):
-            point[0] += wh[0]
-            wh[0] = abs(wh[0])
-        elif(wh[0] > 0 and wh[1] < 0):
-            point[1] += wh[1]
-            wh[1] = abs(wh[1])
-        point[0] *= scaledX
-        point[0] = int(point[0])
-        point[1] *= scaledY
-        point[1] = int(point[1])
-        wh[0] *= scaledX
-        wh[0] = int(wh[0])
-        wh[1] *= scaledY
-        wh[1] = int(wh[1])
-        endpoint = (point[0] + wh[0], point[1] + wh[1])
-        self.annotation_data[self.current_idx] = str( str(self.current_idx) + ', ' + self.images_names[self.current_idx] + ', ' + str(endpoint[1]) + ', ' + str(endpoint[0]) + ', ' + str(point[1]) + ', ' + str(point[0]) + '\n')
+        try:
+            img = self.images[self.current_idx]
+            img_size = (img.shape[0], img.shape[1])
+            scaledX = img_size[0]/self.target_size[0]
+            scaledY = img_size[1]/self.target_size[1]
+            annotation_box = self.annotate_canvas_img.getRect()
+            point = [annotation_box[0], annotation_box[1]]
+            wh = [annotation_box[2], annotation_box[3]]
+            if(wh[0] < 0 and wh[1] < 0):
+               point[0] += wh[0]
+               point[1] += wh[1]
+               wh[0] = abs(wh[0])
+               wh[1] = abs(wh[1])
+            elif(wh[0] < 0 and wh[1] > 0):
+               point[0] += wh[0]
+               wh[0] = abs(wh[0])
+            elif(wh[0] > 0 and wh[1] < 0):
+               point[1] += wh[1]
+               wh[1] = abs(wh[1])
+            point[0] *= scaledX
+            point[0] = int(point[0])
+            point[1] *= scaledY
+            point[1] = int(point[1])
+            wh[0] *= scaledX
+            wh[0] = int(wh[0])
+            wh[1] *= scaledY
+            wh[1] = int(wh[1])
+            endpoint = (point[0] + wh[0], point[1] + wh[1])
+        
+            self.annotation_data[self.current_idx] = str( str(self.current_idx) + ', ' + self.images_names[self.current_idx] + ', ' + str(endpoint[1]) + ', ' + str(endpoint[0]) + ', ' + str(point[1]) + ', ' + str(point[0]) + '\n')
+        except:
+            dlg = FileMissing(self)
+            dlg.setStatus('openfile_issue')
+            dlg.exec_()
 
     def save_annotate(self):
         for data in self.annotation_data:
             csv_file = open(self.metadata_path, "a")
             csv_file.write(data)
             csv_file.close()
-        print("Annotation Data Saved!")
+        if(len(self.annotation_data)>0):
+            print("Annotation Data Saved!")
+        else:
+            dlg = FileMissing(self)
+            dlg.setStatus('openfile_issue')
+            dlg.exec_()
 
     def train(self):
-        pass
+        if(self.filename_train == ''):
+            dlg = FileMissing(self)
+            dlg.setStatus('openfile_issue')
+            dlg.exec_()
+            return None
+        dlg = FileMissing(self)
+        dlg.setStatus('train')
+        missing = True
+        if(self.isPredictFolder):
+            name = os.path.join(self.filename_train, "annotation.csv")
+            if(os.path.exists(name)):
+                missing = False
+        else:
+            name = os.path.dirname(os.path.abspath(self.filename_train))
+            name = os.path.join(name, "annotation.csv")
+            if(os.path.exists(name)):
+                missing = False
+        if (missing):
+            dlg.exec_()
+            self.tabWidget.setCurrentIndex(self.error_tab_idx[0])
+        else:
+            print("Yeet!")
 
     def predict(self):
+        if(self.filenames == ''):
+            dlg = FileMissing(self)
+            dlg.setStatus('openfile_issue')
+            dlg.exec_()
+            return None
         dlg = FileMissing(self)
-        dlg.exec_()
-        changetab = dlg.isChangeTab()
-        if(changetab):
-            #print("Change Tab")
-            self.tabWidget.setCurrentIndex(0)
+        dlg.setStatus('predict')
+        missing = True
+        if(self.isPredictFolder):
+            name = os.path.join(self.filenames, "weight.pth")
+            if(os.path.exists(name)):
+                missing = False
         else:
-            pass
+            name = os.path.dirname(os.path.abspath(self.filenames))
+            name = os.path.join(name, "weight.pth")
+            if(os.path.exists(name)):
+                missing = False
+        if (missing):
+            dlg.exec_()
+            self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
+        else:
+            print("Yeet!")
 
     def prev_pressed(self):
         self.current_idx -= 1
@@ -223,39 +271,42 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
     def getfilePredict(self):
         dlg = OpenFile(self)
         dlg.exec_()
-        self.filenames = dlg.getFileName()
-        if(os.path.isdir(self.filenames)):
-            self.images_to_predict = []
-            self.images_to_predict_names = []
-            self.total_predict_idx = 0
-            self.isPredictFolder = True
-            self.image_adjustment.setPath(self.filenames)
-            self.images_to_predict = self.image_adjustment.getResult()
-            self.images_to_predict_names = self.image_adjustment.getNames()
-            self.total_predict_idx = len(self.images_to_predict)
-            self.current_predict_idx = 0
-            if(self.total_predict_idx > 0):
-                self.total_predict_idx -= 1
-            self.total_predict.setText("Total : " + str(self.total_predict_idx + 1))
-            self.current_predict.setText("Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
-            height, width, channel = self.images_to_predict[self.current_predict_idx].shape
-            bytesPerLine = 3 * width
-            qImg = QImage(self.images_to_predict[self.current_predict_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap.fromImage(qImg)
-            self.imshow_predict.setPixmap(pixmap)
-            self.imshow_predict.setScaledContents(True)
-        else:
-            self.isPredictFolder = False
-            self.image_adjustment.setPath(self.filenames)
-            self.images_to_predict = self.image_adjustment.getResult()
-            self.images_to_predict_names = self.image_adjustment.getNames()
-            height, width, channel = self.images_to_predict.shape
-            bytesPerLine = 3 * width
-            qImg = QImage(self.images_to_predict.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-            pixmap = QPixmap.fromImage(qImg)
-            self.imshow_predict.setPixmap(pixmap)
-            self.imshow_predict.setScaledContents(True)
-
+        try:
+            self.filenames = dlg.getFileName()
+            if(os.path.isdir(self.filenames)):
+                self.images_to_predict = []
+                self.images_to_predict_names = []
+                self.total_predict_idx = 0
+                self.isPredictFolder = True
+                self.image_adjustment.setPath(self.filenames)
+                self.images_to_predict = self.image_adjustment.getResult()
+                self.images_to_predict_names = self.image_adjustment.getNames()
+                self.total_predict_idx = len(self.images_to_predict)
+                self.current_predict_idx = 0
+                if(self.total_predict_idx > 0):
+                    self.total_predict_idx -= 1
+                self.total_predict.setText("Total : " + str(self.total_predict_idx + 1))
+                self.current_predict.setText("Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
+                height, width, channel = self.images_to_predict[self.current_predict_idx].shape
+                bytesPerLine = 3 * width
+                qImg = QImage(self.images_to_predict[self.current_predict_idx].data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(qImg)
+                self.imshow_predict.setPixmap(pixmap)
+                self.imshow_predict.setScaledContents(True)
+            else:
+                self.isPredictFolder = False
+                self.image_adjustment.setPath(self.filenames)
+                self.images_to_predict = self.image_adjustment.getResult()
+                self.images_to_predict_names = self.image_adjustment.getNames()
+                height, width, channel = self.images_to_predict.shape
+                bytesPerLine = 3 * width
+                qImg = QImage(self.images_to_predict.data, width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+                pixmap = QPixmap.fromImage(qImg)
+                self.imshow_predict.setPixmap(pixmap)
+                self.imshow_predict.setScaledContents(True)
+        except: 
+            print("Please Select the File!")
+        
         self.next_predict_button.setVisible(self.isPredictFolder)
         self.prev_predict_button.setVisible(self.isPredictFolder)
         self.total_predict.setVisible(self.isPredictFolder)

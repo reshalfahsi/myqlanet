@@ -39,6 +39,7 @@ class FileHandler():
         self.crop = CropImage()
         self.path = ''
         self.resize = ResizeImage()
+        self.names = ''
         self.valid_image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
 
     def setPath(self,path):
