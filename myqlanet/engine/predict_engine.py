@@ -42,5 +42,5 @@ def predict(model, path, cuda):
             image_tensor = image_tensor.unsqueeze(0)
             image_tensor = Variable(image_tensor)
             output = model(image_tensor)
-            result = output
+            result.append(output)
     return result

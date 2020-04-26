@@ -55,7 +55,7 @@ class AlertDialog(QDialog):
 
     def setStatus(self, status):
         if(status == 'predict_not_found'):
-            self.imperative.setText("Weight File is not Found!")
+            self.imperative.setText("Weight File is not Valid!")
             self.suggestion.setText("Suggestion: Train the Model First!")
         elif(status == 'train_not_found'):
             self.imperative.setText("Annotation File is not Found!")

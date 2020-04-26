@@ -33,7 +33,6 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.annotation_data = []
         self.images_to_predict = None
         self.images_to_predict_names = []
-        self.images_predicted = []
         self.isPredictFolder = False
         self.setupUi(self)
         self.setFixedSize(self.size())
@@ -211,22 +210,54 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
         else:
+            result_path = ''
+            result_csv_path = ''
             if(self.isPredictFolder):
                 #dataset_path = os.path.join(self.filenames, "annotation.csv")
                 #dataset = MaculaDataset(dataset_path,self.filenames)
                 #self.myqlanet.compile((dataset,dataset))
                 result = self.myqlanet.predict(weight_path, self.filenames)
+                result_path = os.path.join(self.filenames, "result")
+                try:
+                    os.mkdir(result_path)
+                    print("Directory " , result_path ,  " Created ") 
+                except FileExistsError:
+                    print("Directory " , result_path ,  " already exists")
+                result_csv_path = os.path.join(self.filenames, "result/result.csv")
             else:
                 root_path = os.path.dirname(os.path.abspath(self.filenames))
                 #dataset_path = os.path.join(root_path, "annotation.csv")
                 #dataset = MaculaDataset(dataset_path, root_path)
                 #self.myqlanet.compile((dataset))
                 result = self.myqlanet.predict(weight_path, root_path)
+                result_path = os.path.join(root_path, "result")
+                try:
+                    os.mkdir(result_path)
+                    print("Directory " , result_path ,  " Created ") 
+                except FileExistsError:
+                    print("Directory " , result_path ,  " already exists")
+                result_csv_path = os.path.join(root_path, "result/result.csv")
             if(result == None):
                 dlg.exec_()
                 self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
                 return None
-            self.images_predicted = result
+            self.annotation_data = result
+            csv_file = open(result_csv_path, "w")
+            csv_file.write('img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
+            csv_file.close() 
+            for idx, bbox in enumerate(self.annotation_data):
+                start_point = (int(bbox[3]), int(bbox[2]))
+                end_point = (int(bbox[1]), int(bbox[0]))
+                color = (0, 255, 0)
+                thickness = 4
+                self.images_to_predict[idx] = cv2.rectangle(self.images_to_predict[idx], start_point, end_point, color, thickness)
+                image_name = os.path.join(result_path, self.images_to_predict_names[idx])
+                cv2.imwrite(image_name, self.images_to_predict[idx])
+                data = str(str(self.images_to_predict_names[idx]) + ', ' + str(end_point[1]) + ', ' + str(end_point[0]) + ', ' + str(start_point[1]) + ', ' + str(end_point[0]))
+                csv_file = open(result_csv_path, "a")
+                csv_file.write(data)
+                csv_file.close()
+                
 
     def prev_pressed(self):
         self.current_idx -= 1

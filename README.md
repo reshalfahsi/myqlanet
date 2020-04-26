@@ -27,3 +27,30 @@ sudo apt install pyqt5-dev-tools
 sudo pip3 install -r requirements.txt
 python3 app.py
 ~~~
+
+## Working with the Library
+
+Instead of using GUI, you can code from the scratch:
+
+```python
+
+from myqlanet import *
+
+# define the network
+myqlanet = MyQLaNet()
+
+# predict from the given path to weight and its root path
+result = myqlanet.predict("/path/to/weight","/root/path/")
+
+# print the result in the form of bounding box data: y lower, x, lower, y upper, x upper 
+print(result)
+
+```
+
+Example output:
+
+```
+
+(15, 100, 135, 220)
+
+```
