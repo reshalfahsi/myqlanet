@@ -11,7 +11,7 @@ class GGB():
 
     def process(self):
         self.img = cv2.imread(self.path)
-        img_yuv = cv2.cvtColor(img, cv2.COLOR_BGR2YUV)
+        img_yuv = cv2.cvtColor(self.img, cv2.COLOR_BGR2YUV)
         img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
         img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
         b_,g_,_ = cv2.split(img_output)
@@ -19,3 +19,11 @@ class GGB():
     
     def getResult(self):
         return self.img
+
+    def run(self, img):
+        img_yuv = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
+        img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
+        _, g_, b_ = cv2.split(img_output)
+        ret = cv2.merge((g_,g_,b_))
+        return ret

@@ -1,5 +1,6 @@
 import cv2
-
+from skimage import io
+from skimage.transform import resize
 class CropImage():
     def __init__(self):
         self.crop_percentage = 77
@@ -21,6 +22,17 @@ class CropImage():
             lengthY = 2*float(self.crop_percentage/100.0)*center[0];
             self.crop_img = img[int(startY):int(startY+lengthY), int(startX):int(startX+lengthX)]
 
+    def run(self,img):
+        height = img.shape[0]
+        width = img.shape[1]
+        center = [height/2.0, width/2.0];
+        startX = center[1]-float(self.crop_percentage/100.0)*center[1];
+        startY = center[0]-float(self.crop_percentage/100.0)*center[0];
+        lengthX = 2*float(self.crop_percentage/100.0)*center[1];
+        lengthY = 2*float(self.crop_percentage/100.0)*center[0];
+        self.crop_img = img[int(startY):int(startY+lengthY), int(startX):int(startX+lengthX)]
+        return self.crop_img
+
     def setCropPercentage(self, percentage):
         self.crop_percentage = percentage
 
@@ -33,6 +45,10 @@ class ResizeImage():
 
     def process(self, img, dim):
         self.result = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+
+    def run(self, img, dim):
+        self.result = resize(img, dim)
+        return self.result
 
     def getResult(self):
         return self.result

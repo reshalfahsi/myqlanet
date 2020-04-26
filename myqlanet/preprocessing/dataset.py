@@ -3,6 +3,8 @@ from torch.utils.data import Dataset
 from skimage import io
 import numpy as np
 import pandas as pd
+from .ggb import GGB
+from ..utils import *
 
 class MaculaDataset(Dataset):
     """Macula dataset."""
@@ -18,6 +20,9 @@ class MaculaDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.csv_file = csv_file
+        self.crop = CropImage()
+        self.resize = ResizeImage()
+        self.ggb = GGB()
 
     def __len__(self):
         return len(self.macula_frame)
@@ -29,6 +34,9 @@ class MaculaDataset(Dataset):
         img_name = os.path.join(self.root_dir, self.macula_frame.iloc[idx, 0])
 
         image = io.imread(img_name)
+        image = self.crop.run(image)
+        image = self.resize.run(image,(1799, 2699))
+        image = self.ggb.run(image)
         bbox = self.macula_frame.iloc[idx, 1:]
         bbox = np.array(bbox)
         bbox = bbox.astype('float').reshape(-1)

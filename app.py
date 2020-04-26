@@ -33,6 +33,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.annotation_data = []
         self.images_to_predict = None
         self.images_to_predict_names = []
+        self.images_predicted = []
         self.isPredictFolder = False
         self.setupUi(self)
         self.setFixedSize(self.size())
@@ -70,7 +71,6 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
-        self.ggb = GGB()
         self.image_adjustment = ImageAdjustment()
         self.dataset_adjustment = DatasetAdjustment()
 
@@ -103,10 +103,14 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.imshow_predict.setScaledContents(True)
 
     def save_predict(self):
-        pass
+        dlg = AlertDialog(self)
+        dlg.setStatus('openfile_issue')
+        dlg.exec_()
 
     def save_train(self):
-       pass
+       dlg = AlertDialog(self)
+       dlg.setStatus('openfile_issue')
+       dlg.exec_()
 
     def set_annotate(self):
         try:
@@ -140,7 +144,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         
             self.annotation_data[self.current_idx] = str( str(self.current_idx) + ', ' + self.images_names[self.current_idx] + ', ' + str(endpoint[1]) + ', ' + str(endpoint[0]) + ', ' + str(point[1]) + ', ' + str(point[0]) + '\n')
         except:
-            dlg = FileMissing(self)
+            dlg = AlertDialog(self)
             dlg.setStatus('openfile_issue')
             dlg.exec_()
 
@@ -151,19 +155,22 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             csv_file.close()
         if(len(self.annotation_data)>0):
             print("Annotation Data Saved!")
+            dlg = AlertDialog(self)
+            dlg.setStatus('saved')
+            dlg.exec_()
         else:
-            dlg = FileMissing(self)
+            dlg = AlertDialog(self)
             dlg.setStatus('openfile_issue')
             dlg.exec_()
 
     def train(self):
         if(self.filename_train == ''):
-            dlg = FileMissing(self)
+            dlg = AlertDialog(self)
             dlg.setStatus('openfile_issue')
             dlg.exec_()
             return None
-        dlg = FileMissing(self)
-        dlg.setStatus('train')
+        dlg = AlertDialog(self)
+        dlg.setStatus('train_not_found')
         missing = True
         if(self.isPredictFolder):
             name = os.path.join(self.filename_train, "annotation.csv")
@@ -182,27 +189,44 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
 
     def predict(self):
         if(self.filenames == ''):
-            dlg = FileMissing(self)
+            dlg = AlertDialog(self)
             dlg.setStatus('openfile_issue')
             dlg.exec_()
             return None
-        dlg = FileMissing(self)
-        dlg.setStatus('predict')
+        dlg = AlertDialog(self)
+        dlg.setStatus('predict_not_found')
         missing = True
+        result = None
+        weight_path = ''
         if(self.isPredictFolder):
-            name = os.path.join(self.filenames, "weight.pth")
-            if(os.path.exists(name)):
+            weight_path = os.path.join(self.filenames, "weight.pth")
+            if(os.path.exists(weight_path)):
                 missing = False
         else:
-            name = os.path.dirname(os.path.abspath(self.filenames))
-            name = os.path.join(name, "weight.pth")
-            if(os.path.exists(name)):
+            weight_path = os.path.dirname(os.path.abspath(self.filenames))
+            weight_path = os.path.join(weight_path, "weight.pth")
+            if(os.path.exists(weight_path)):
                 missing = False
         if (missing):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
         else:
-            print("Yeet!")
+            if(self.isPredictFolder):
+                #dataset_path = os.path.join(self.filenames, "annotation.csv")
+                #dataset = MaculaDataset(dataset_path,self.filenames)
+                #self.myqlanet.compile((dataset,dataset))
+                result = self.myqlanet.predict(weight_path, self.filenames)
+            else:
+                root_path = os.path.dirname(os.path.abspath(self.filenames))
+                #dataset_path = os.path.join(root_path, "annotation.csv")
+                #dataset = MaculaDataset(dataset_path, root_path)
+                #self.myqlanet.compile((dataset))
+                result = self.myqlanet.predict(weight_path, root_path)
+            if(result == None):
+                dlg.exec_()
+                self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
+                return None
+            self.images_predicted = result
 
     def prev_pressed(self):
         self.current_idx -= 1
@@ -272,7 +296,10 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         dlg = OpenFile(self)
         dlg.exec_()
         try:
-            self.filenames = dlg.getFileName()
+            names = dlg.getFileName()
+            if names == '':
+                return None
+            self.filenames = names
             if(os.path.isdir(self.filenames)):
                 self.images_to_predict = []
                 self.images_to_predict_names = []

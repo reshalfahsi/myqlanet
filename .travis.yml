@@ -14,22 +14,17 @@ matrix:
       python: "3.5"
       env:
         - QT=5
-        - CONDA=4.2.0
       addons:
         apt:
           packages:
             - cmake
             - xvfb
       before_install:
-        - curl -O https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh
-        - /bin/bash Anaconda3-4.2.0-Linux-x86_64.sh -b -p $HOME/anaconda3
-        - export PATH="$HOME/anaconda3/bin:$PATH"
-        - conda create -y -n myqlanet-py3qt5 python=3.5
-        - source activate myqlanet-py3qt5
-        - conda install -y pyqt=5
-        - conda install -y lxml
-        - make qt5py3
-        - xvfb-run make testpy3
+        - apt install python-pip
+        - pip3 install -y pyqt=5
+        - pip3 install -y lxml
+        #- make qt5py3
+        #- xvfb-run make testpy3
 
 script:
   - exit 0

@@ -24,7 +24,6 @@ class MyQLaNet(nn.Module):
         self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride = 2, padding=1)
         self.drop1 = nn.Dropout2d(p=0.25)
         self.fc1 = nn.Linear(704, 128)
-        #self.fc1 = nn.Linear(1120, 128)
         self.drop2 = nn.Dropout2d(p=0.5)
         self.fc2 = nn.Linear(128, self.num_output)
         self.iscuda = torch.cuda.is_available()
@@ -38,7 +37,6 @@ class MyQLaNet(nn.Module):
         self.batch_size = 1
         self.learning_rate = 1e-3
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        #self.weight_path = ''
         self.best_loss = 9.9999999999e9
         self.num_epochs = 1000
         self.start_epoch = 0
@@ -55,62 +53,81 @@ class MyQLaNet(nn.Module):
         x = self.conv6(x)
         x = self.conv7(x)
         x = x.view(-1, 704)
-        #x = x.view(-1, 1120)
         x = F.relu(self.fc1(x))
         x = self.drop2(x)
         x = self.fc2(x)
         return F.relu(x)
 
-    def compile(self, *dataset):
+    def compile(self, dataset):
         """
         """
-        if (len(dataset==0)):
-            print("Please Insert Path!")
-        elif (len(dataset==1)):
-            train_dataset, test_dataset = dataset_util.split_train_test(dataset[0])
-        elif (len(dataset==2)):
-            train_dataset, test_dataset = dataset[0], dataset[1]
-        else:
+        train_dataset = None
+        test_dataset = None
+        print(dataset)
+        try:
+            dummy = dataset[2]
             print("Argument Invalid!")
+            return None
+        except:
+            try:
+                train_dataset, test_dataset = dataset[0], dataset[1] 
+            except:
+                try:
+                    train_dataset, test_dataset = dataset_util.split_train_test(dataset)
+                except:
+                    print("Please Insert Path!")
+        if (train_dataset == None):
+           return None
         self.train_dataset = train_dataset
         self.test_dataset = test_dataset
-        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-        self.test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False) 
+        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=self.batch_size, shuffle=False) 
 
 
     def fit(self,path = ''):
+        success = False
         if path == '':
            print("Please Insert Path!")
-           return None
+           return success
         if os.path.isfile(path):
-            print("=> loading checkpoint '{}' ...".format(path))
-            if cuda:
-                checkpoint = torch.load(path)
-            else:
-                # Load GPU model on CPU
-                checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
-            self.start_epoch = checkpoint['epoch']
-            self.best_loss = checkpoint['best_loss']
-            self.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (trained for {} epochs)".format(path, checkpoint['epoch']))
+            try:
+                print("=> loading checkpoint '{}' ...".format(path))
+                if self.iscuda:
+                    checkpoint = torch.load(path)
+                else:
+                    # Load GPU model on CPU
+                    checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
+                self.start_epoch = checkpoint['epoch']
+                self.best_loss = checkpoint['best_loss']
+                self.load_state_dict(checkpoint['state_dict'])
+                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(path, checkpoint['epoch']))
+            except:
+                print("Training Failed!")
+                return success
         for epoch in range(num_epochs):
-            train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss) 
+            train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
+            success = True
+        return success 
 
     def predict(self, weight_path = '', path = ''):
         if path == '' and weight_path == '':
            print("Please Insert Path!")
            return None
         if os.path.isfile(weight_path):
-            print("=> loading checkpoint '{}' ...".format(weight_path))
-            if cuda:
-                checkpoint = torch.load(weight_path)
-            else:
-                # Load GPU model on CPU
-                checkpoint = torch.load(weight_path, map_location=lambda storage, loc: storage)
-            self.start_epoch = checkpoint['epoch']
-            self.best_loss = checkpoint['best_loss']
-            self.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (trained for {} epochs)".format(weight_path, checkpoint['epoch']))
+            try:
+                print("=> loading checkpoint '{}' ...".format(weight_path))
+                if self.iscuda:
+                    checkpoint = torch.load(weight_path)
+                else:
+                    # Load GPU model on CPU
+                    checkpoint = torch.load(weight_path, map_location=lambda storage, loc: storage)
+                self.start_epoch = checkpoint['epoch']
+                self.best_loss = checkpoint['best_loss']
+                self.load_state_dict(checkpoint['state_dict'])
+                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(weight_path, checkpoint['epoch']))
+            except:
+                print("Please Train your Network First!")
+                return None
         else:
             print("Please Train your Network First!")
             return None
