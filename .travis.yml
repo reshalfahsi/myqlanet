@@ -20,7 +20,7 @@ matrix:
             - cmake
             - xvfb
       before_install:
-        - sudo apt install python-pip
+        - sudo apt install python3-pip
         - sudo apt install pyqt5-dev-tools
         - sudo pip3 install -y lxml
         - sudo pip3 install -y torch

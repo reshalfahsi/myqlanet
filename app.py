@@ -73,6 +73,10 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.timer.start(100)
         self.list_loss = []
         self.isTrain = False
+        self.isTrainSuccess = False
+        self.epoch_now = -1
+        self.last_epoch = -1
+        self.iou_now = 0
        
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
@@ -85,6 +89,23 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         #self.plt.set_ylim(-1.1, 1.1)
         self.plt.plot(t, np.sin(t + time.time()), '-r', label="loss")
         self.plt.legend(loc='upper left')
+        x_lim = self.plt.get_xlim()
+        y_lim = self.plt.get_ylim()
+        x_text = x_lim[0] + ((x_lim[1] - x_lim[0])/64)
+        y_text = y_lim[1] - ((y_lim[1] - y_lim[0])/5)
+        if(self.isTrain):
+            self.epoch_now, loss = self.myqlanet.update_loss()
+            _, self.iou_now = self.myqlanet.update_iou()
+            if(self.epoch_now > self.last_epoch):
+                list_loss.append(loss)
+                self.last_epoch = self.epoch_now
+            elif(self.last_epoch >= 0):
+                self.list_loss[self.last_epoch] = loss
+            index_loss = range(self.epoch_now + 1)
+            plt.plot(index_loss, list_loss, '-r', label="loss")
+            self.plt.legend(loc='upper left')
+           
+        self.plt.text(x_text, y_text,str('IOU: ' + str(self.iou_now)),fontsize=10)
         self.plt.figure.canvas.draw()
 
     def prev_predict(self):
@@ -196,7 +217,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.isTrain = True
             dataset = MaculaDataset(dataset_path,self.filenames_train)
             self.myqlanet.compile((dataset))
-            self.myqlanet.fit(weight_path)
+            self.isTrainSuccess = self.myqlanet.fit(weight_path)
 
     def predict(self):
         if(self.filenames == ''):

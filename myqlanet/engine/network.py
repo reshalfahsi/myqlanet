@@ -43,6 +43,7 @@ class MyQLaNet(nn.Module):
         self.train_dataset = None
         self.test_dataset = None
         self.loss_now = 9e6
+        self.iou_now = 0
         self.epoch_now = 0
         
     def forward(self, x):
@@ -62,6 +63,9 @@ class MyQLaNet(nn.Module):
 
     def update_loss(self):
         return self.epoch_now, self.loss_now
+
+    def update_iou(self):
+        return self.epoch_now, self.iou_now
 
     def compile(self, dataset):
         """
@@ -110,7 +114,7 @@ class MyQLaNet(nn.Module):
                 print("Training Failed!")
                 return success
         for epoch in range(num_epochs):
-            self.loss_now = train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
+            self.loss_now, self.iou_now = train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
             self.epoch_now = epoch
             success = True
         return success 

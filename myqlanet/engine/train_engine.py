@@ -3,14 +3,19 @@ from torch.utils.data import DataLoader
 from ..preprocessing import MaculaDataset
 import time
 from torch.autograd import Variable
+from ..utils import image_util
 
 def eval(model, optimizer, test_loader, cuda, num_output):
     """Eval over test set"""
     model.eval()
     ret_loss = 0
+    ret_iou = 0
+    idx = 0
     # Get Batch
     for (data, target) in test_loader:
         loss = 0
+        iou = 0
+        idx += 1
         data, target = Variable(data), Variable(target)
         if cuda:
             data, target = data.cuda(), target.cuda()
@@ -22,9 +27,16 @@ def eval(model, optimizer, test_loader, cuda, num_output):
         # Compute Loss
         for d in range(0,num_output):
             loss += math.sqrt(abs(output[0][d]**2 - target[0][d]**2))
+        gt_start_point = (target[0][3], target[0][2])
+        gt_end_point = (target[0][1], target[0][0])
+        start_point = (output[0][3], output[0][2])
+        end_point = (output[0][1], output[0][0])
         loss /=  num_output
         ret_loss += loss
-    return ret_loss
+        iou = float(image_util.bb_intersection_over_union((gt_start_point[0], gt_start_point[1], gt_end_point[0], gt_end_point[1]),(start_point[0], start_point[1], end_point[0], end_point[1])))
+        ret_iou += iou
+    ret_iou /= float(idx)
+    return ret_loss, ret_iou
 
 def save_checkpoint(state, is_best, filename=''):
     """Save checkpoint if a new best is achieved"""
@@ -81,13 +93,13 @@ def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, c
             loss.data,
             #accuracy,
             average_time/print_every))  # Average
-    loss = eval(model, optimizer, test_loader, cuda, num_output)
+    loss, iou = eval(model, optimizer, test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
     is_best = bool(loss < best_loss)
     if is_best:
         best_loss = loss
         # Save checkpoint if is a new best
         train_engine.save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': self.state_dict(), 'best_loss': best_loss}, is_best, path)
-    return loss
+    return loss, iou
 
 
