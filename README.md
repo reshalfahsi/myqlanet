@@ -12,13 +12,15 @@ It provides end to end system for macula detection with graphical user interface
 
 ![alt text](resources/img/gui.jpg)
 
+
 ## Dependencies
 
 * Ubuntu Linux (OS)
 * PyQt5 (GUI)
 * Python > 3.x (Programming Language)
 * PyTorch (Machine Learning Framework)
-* OpenCV (Computer Vision Framework)
+* OpenCV and scikit-image (Computer Vision Framework)
+
 
 ## Instalation
 
@@ -28,19 +30,20 @@ sudo pip3 install -r requirements.txt
 python3 app.py
 ~~~
 
+
 ## Working with the Library
 
 Instead of using GUI, you can code from the scratch:
 
 ```python
 
-from myqlanet import *
+import myqlanet
 
 # define the network
-myqlanet = MyQLaNet()
+model = myqlanet.MyQLaNet()
 
 # predict from the given path to weight and its root path
-result = myqlanet.predict("/path/to/weight","/root/path/")
+result = model.predict("/path/to/weight","/root/path/")
 
 # print the result in the form of bounding box data: y lower, x, lower, y upper, x upper 
 print(result)
@@ -50,7 +53,5 @@ print(result)
 Example output:
 
 ```
-
 (15, 100, 135, 220)
-
 ```

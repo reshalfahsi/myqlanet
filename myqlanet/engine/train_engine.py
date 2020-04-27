@@ -88,5 +88,6 @@ def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, c
         best_loss = loss
         # Save checkpoint if is a new best
         train_engine.save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': self.state_dict(), 'best_loss': best_loss}, is_best, path)
+    return loss
 
 

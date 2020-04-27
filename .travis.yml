@@ -20,9 +20,18 @@ matrix:
             - cmake
             - xvfb
       before_install:
-        - apt install python-pip
-        - pip3 install -y pyqt=5
-        - pip3 install -y lxml
+        - sudo apt install python-pip
+        - sudo apt install pyqt5-dev-tools
+        - sudo pip3 install -y lxml
+        - sudo pip3 install -y torch
+        - sudo pip3 install -y torchvision
+        - sudo pip3 install -y matplotlib
+        - sudo pip3 install -y numpy
+        - sudo pip3 install -y pandas
+        - sudo pip3 install -y scikit-image
+        - sudo pip3 install -y python-opencv
+        - ls
+        #- sudo pip3 install -r requirements.txt       
         #- make qt5py3
         #- xvfb-run make testpy3
 

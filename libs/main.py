@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from matplotlib.backends.backend_qt5agg import (
+        FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.figure import Figure
 from . import canvas
 
 class Ui_MainWindow(object):
@@ -84,6 +87,15 @@ class Ui_MainWindow(object):
         self.tabWidget.addTab(self.predict_tab, "")
         self.train_tab = QtWidgets.QWidget()
         self.train_tab.setObjectName("train_tab")
+        self.train_layout = QtWidgets.QVBoxLayout()
+        self.lossPlot = FigureCanvas(Figure(figsize=(9, 6)))
+        self.loss_plot_label = QtWidgets.QLabel(self.train_tab)
+        self.loss_plot_label.setGeometry(QtCore.QRect(10, 20, 620, 400))
+        self.loss_plot_label.setObjectName("loss_plot_label")
+        self.lossPlot.setObjectName("lossPlot")
+        self.train_layout.addWidget(self.lossPlot)
+        self.train_layout.setObjectName("train_layout")
+        self.loss_plot_label.setLayout(self.train_layout)
         self.myqlaimg_train = QtWidgets.QLabel(self.train_tab)
         self.myqlaimg_train.setGeometry(QtCore.QRect(650, 350, 141, 131))
         self.myqlaimg_train.setObjectName("myqlaimg_train")
@@ -102,10 +114,7 @@ class Ui_MainWindow(object):
         self.openfile_train_button.setObjectName("openfile_train_button")
         self.train_button = QtWidgets.QPushButton(self.train_tab)
         self.train_button.setGeometry(QtCore.QRect(670, 70, 89, 25))
-        self.train_button.setObjectName("train_button")
-        self.lossPlot = QtWidgets.QLabel(self.train_tab)
-        self.lossPlot.setGeometry(QtCore.QRect(30, 40, 561, 361))
-        self.lossPlot.setObjectName("lossPlot")
+        self.train_button.setObjectName("train_button")        
         self.loss_label = QtWidgets.QLabel(self.train_tab)
         self.loss_label.setGeometry(QtCore.QRect(30, 10, 67, 17))
         self.loss_label.setObjectName("loss_label")

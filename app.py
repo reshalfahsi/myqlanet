@@ -1,10 +1,10 @@
 import sys
 import os
-import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import pandas as pd
 import csv
+import time
 
 try:
     from PyQt5.QtGui import *
@@ -23,7 +23,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.filenames = ''
-        self.filename_train = ''
+        self.filenames_train = ''
         self.current_idx = 0
         self.total_idx = 0
         self.total_predict_idx = 0
@@ -67,11 +67,25 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.images = []
         self.target_size = (581, 441)
         self.error_tab_idx = (0, 2)
-        
+        self.plt = self.lossPlot.figure.subplots()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update)
+        self.timer.start(100)
+        self.list_loss = []
+        self.isTrain = False
+       
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
         self.image_adjustment = ImageAdjustment()
         self.dataset_adjustment = DatasetAdjustment()
+
+    def update(self):
+        self.plt.clear()
+        t = np.linspace(0, 10, 101)
+        #self.plt.set_ylim(-1.1, 1.1)
+        self.plt.plot(t, np.sin(t + time.time()), '-r', label="loss")
+        self.plt.legend(loc='upper left')
+        self.plt.figure.canvas.draw()
 
     def prev_predict(self):
         if(self.isPredictFolder):
@@ -163,7 +177,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             dlg.exec_()
 
     def train(self):
-        if(self.filename_train == ''):
+        if(self.filenames_train == ''):
             dlg = AlertDialog(self)
             dlg.setStatus('openfile_issue')
             dlg.exec_()
@@ -171,20 +185,18 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         dlg = AlertDialog(self)
         dlg.setStatus('train_not_found')
         missing = True
-        if(self.isPredictFolder):
-            name = os.path.join(self.filename_train, "annotation.csv")
-            if(os.path.exists(name)):
-                missing = False
-        else:
-            name = os.path.dirname(os.path.abspath(self.filename_train))
-            name = os.path.join(name, "annotation.csv")
-            if(os.path.exists(name)):
-                missing = False
+        dataset_path = os.path.join(self.filenames_train, "annotation.csv")
+        weight_path = os.path.join(self.filenames_train, "weight.pth")
+        if(os.path.exists(name)):
+            missing = False
         if (missing):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[0])
         else:
-            print("Yeet!")
+            self.isTrain = True
+            dataset = MaculaDataset(dataset_path,self.filenames_train)
+            self.myqlanet.compile((dataset))
+            self.myqlanet.fit(weight_path)
 
     def predict(self):
         if(self.filenames == ''):
@@ -372,11 +384,11 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
 
     def getfileTrain(self):
         dlg = QFileDialog()
-        dlg.setFileMode(QFileDialog.AnyFile)
+        dlg.setFileMode(QFileDialog.Directory)
 		
         if dlg.exec_():
-            self.filenames = dlg.selectedFiles()
-            self.filenames = self.filenames[0]
+            self.filenames_train = dlg.selectedFiles()
+            self.filenames_train = self.filenames_train[0]
 
 def create_app(argv=[]):
     app = QApplication(argv)

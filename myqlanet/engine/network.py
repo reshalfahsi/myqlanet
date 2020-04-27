@@ -38,10 +38,12 @@ class MyQLaNet(nn.Module):
         self.learning_rate = 1e-3
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         self.best_loss = 9.9999999999e9
-        self.num_epochs = 1000
+        self.num_epochs = 1500
         self.start_epoch = 0
         self.train_dataset = None
         self.test_dataset = None
+        self.loss_now = 9e6
+        self.epoch_now = 0
         
     def forward(self, x):
         x = F.relu(self.conv1(x))
@@ -57,6 +59,9 @@ class MyQLaNet(nn.Module):
         x = self.drop2(x)
         x = self.fc2(x)
         return F.relu(x)
+
+    def update_loss(self):
+        return self.epoch_now, self.loss_now
 
     def compile(self, dataset):
         """
@@ -105,7 +110,8 @@ class MyQLaNet(nn.Module):
                 print("Training Failed!")
                 return success
         for epoch in range(num_epochs):
-            train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
+            self.loss_now = train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
+            self.epoch_now = epoch
             success = True
         return success 
 
