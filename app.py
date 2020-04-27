@@ -77,6 +77,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.epoch_now = -1
         self.last_epoch = -1
         self.iou_now = 0
+        self.max_epoch = 1500
        
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
@@ -104,6 +105,9 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             index_loss = range(self.epoch_now + 1)
             plt.plot(index_loss, list_loss, '-r', label="loss")
             self.plt.legend(loc='upper left')
+            percent = float(float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0
+            self.training_progress.setValue(percent)
+            self.training_status_label.setText("Training Progress : On Progress")
            
         self.plt.text(x_text, y_text,str('IOU: ' + str(self.iou_now)),fontsize=10)
         self.plt.figure.canvas.draw()
@@ -218,6 +222,8 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             dataset = MaculaDataset(dataset_path,self.filenames_train)
             self.myqlanet.compile((dataset))
             self.isTrainSuccess = self.myqlanet.fit(weight_path)
+            self.isTrain = False
+            self.training_status_label.setText("Training Progress : Finished")
 
     def predict(self):
         if(self.filenames == ''):
