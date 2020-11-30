@@ -35,7 +35,7 @@ class MaculaDataset(Dataset):
 
     def __getitem__(self, idx):
 
-        print("Constructing Dataset")
+        # print("Constructing Dataset")
 
         if torch.is_tensor(idx):
             idx = idx.tolist()

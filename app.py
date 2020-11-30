@@ -6,6 +6,9 @@ import pandas as pd
 import csv
 import time
 
+import threading
+
+
 try:
     from PyQt5.QtGui import *
     from PyQt5.QtCore import *
@@ -20,6 +23,9 @@ from myqlanet import *
 #ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class MyQLaGUI(QMainWindow, Ui_MainWindow):
+
+    train_signal = pyqtSignal()
+
     def __init__(self):
         super().__init__()
         self.filenames = ''
@@ -72,21 +78,59 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.timer.timeout.connect(self.update)
         self.timer.start(100)
         self.list_loss = []
+        self.list_loss_copy = []
         self.isTrain = False
         self.isTrainSuccess = False
         self.epoch_now = -1
         self.last_epoch = -1
         self.iou_now = 0
-        self.max_epoch = 1500
+        self.max_epoch = 0
+
+        self.weight_path = ''
+        self.train_thread = threading.Thread(target=self.train_thread_fn)
+        # self.train_thread.start()
+        self.thread_called = False
+        self.percent = 0
+        self.isLastTrain = False
+
+        self.train_signal.connect(self.training_process)
+
        
         #MyQLaNet tools
         self.myqlanet = MyQLaNet()
         self.image_adjustment = ImageAdjustment()
         self.dataset_adjustment = DatasetAdjustment()
 
+    def train_thread_fn(self):
+        # while True:
+        if self.isTrain:
+            self.isTrainSuccess = self.myqlanet.fit(self.weight_path)
+            self.isTrain = False
+            self.training_status_label.setText("Training Progress : Finished")
+        self.thread_called = True
+        # self.train_thread.join()
+
+    @pyqtSlot()
+    def training_process(self):
+        self.isTrain = True
+
+        self.max_epoch = self.myqlanet.max_epoch()
+
+        if not self.train_thread.is_alive() and not self.thread_called:
+            self.train_thread.start()
+        else:
+            self.train_thread.join()
+            self.train_thread = None
+            self.train_thread = threading.Thread(target=self.train_thread_fn)
+            self.train_thread.start()
+
+        # self.isTrainSuccess = self.myqlanet.fit(self.weight_path)
+        # self.isTrain = False
+        # self.training_status_label.setText("Training Progress : Finished")        
+
     def update(self):
         self.plt.clear()
-        t = np.linspace(0, 10, 101)
+        # t = np.linspace(0, 10, 101)
         #self.plt.set_ylim(-1.1, 1.1)
         # self.plt.plot(t, np.sin(t + time.time()), '-r', label="loss")
         # self.plt.legend(loc='upper left')
@@ -94,10 +138,19 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         y_lim = self.plt.get_ylim()
         x_text = x_lim[0] + ((x_lim[1] - x_lim[0])/64)
         y_text = y_lim[1] - ((y_lim[1] - y_lim[0])/5)
+        # percent = 0
         
         if(self.isTrain):
+            if not self.isLastTrain:
+                self.epoch_now = -1
+                self.last_epoch = -1
+                self.list_loss = []
+                self.isLastTrain = True
+                # print("adios")
             self.epoch_now, loss = self.myqlanet.update_loss()
             _, self.iou_now = self.myqlanet.update_iou()
+            # print(self.epoch_now)
+            # print(self.last_epoch)
             if(self.epoch_now > self.last_epoch):
                 self.list_loss.append(loss)
                 self.last_epoch = self.epoch_now
@@ -105,12 +158,34 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.list_loss[self.last_epoch] = loss
             index_loss = range(self.epoch_now + 1)
             self.plt.plot(index_loss, self.list_loss, '-r', label="loss")
+            self.plt.plot([], [], ' ', label=str('IOU: ' + str(self.iou_now)))
             self.plt.legend(loc='upper left')
-            percent = float(float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0
-            self.training_progress.setValue(percent)
+            self.percent = float(float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0
+            # self.training_progress.setValue(percent)
             self.training_status_label.setText("Training Progress : On Progress")
-           
-        self.plt.text(x_text, y_text,str('IOU: ' + str(self.iou_now)),fontsize=10)
+            self.list_loss_copy = self.list_loss
+        else:
+            
+            if self.thread_called:
+                # self.last_epoch = -1
+                index_loss = range(self.epoch_now + 1)
+                self.plt.plot(index_loss, self.list_loss_copy, '-r', label="loss")
+                self.plt.plot([], [], ' ', label=str('IOU: ' + str(self.iou_now)))
+                self.plt.legend(loc='upper left')
+                if self.isLastTrain:
+                    self.epoch_now, _ = self.myqlanet.update_loss()
+                    self.percent = float(float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0
+                    self.epoch_now -= 1
+            else:
+                self.plt.text(x_text, y_text,str('IOU: ' + str(self.iou_now)),fontsize=10)
+                self.epoch_now = -1
+                self.last_epoch = -1
+                self.list_loss = []
+            self.isLastTrain = False
+
+        # self.list_loss = []
+        self.training_progress.setValue(self.percent)   
+        # self.plt.text(x_text, y_text,str('IOU: ' + str(self.iou_now)),fontsize=10)
         self.plt.figure.canvas.draw()
 
     def prev_predict(self):
@@ -212,22 +287,23 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         dlg.setStatus('train_not_found')
         missing = True
         dataset_path = os.path.join(self.filenames_train, "annotation.csv")
-        weight_path = os.path.join(self.filenames_train, "weight.pth")
+        self.weight_path = os.path.join(self.filenames_train, "weight.pth")
         if(os.path.exists(self.filenames_train)):
             missing = False
         if (missing):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[0])
         else:
-            self.isTrain = True
+            # self.isTrain = True   
             # print(dataset_path)
             dataset = MaculaDataset(dataset_path,self.filenames_train)
             # print(dataset)
             # self.myqlanet.compile((dataset))
             self.myqlanet.compile(dataset)
-            self.isTrainSuccess = self.myqlanet.fit(weight_path)
-            self.isTrain = False
-            self.training_status_label.setText("Training Progress : Finished")
+            self.train_signal.emit()
+            # self.isTrainSuccess = self.myqlanet.fit(weight_path)
+            # self.isTrain = False
+            # self.training_status_label.setText("Training Progress : Finished")
 
     def predict(self):
         if(self.filenames == ''):

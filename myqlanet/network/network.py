@@ -48,7 +48,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 100 # 1500
+        self.num_epochs = 5 # 1500
         
         self.train_dataset = None
         self.test_dataset = None
@@ -77,6 +77,9 @@ class MyQLaNet(nn.Module):
 
     def optimizer(self):
         return self.optim
+
+    def max_epoch(self):
+        return self.num_epochs
 
     def loss(self):
         return self.loss_fn
@@ -134,7 +137,8 @@ class MyQLaNet(nn.Module):
         # if (train_dataset == None):
         #     print("Train Dataset is None!")
         #     return None
-        
+        self.epoch_now = 0
+
         self.train_dataset = dataset #train_dataset
         self.test_dataset = dataset #test_dataset
         self.train_loader = torch.utils.data.DataLoader(dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True)
