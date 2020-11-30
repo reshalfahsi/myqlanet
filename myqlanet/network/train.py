@@ -1,7 +1,10 @@
 import torch
 from torch.utils.data import DataLoader
 from ..preprocessing import MaculaDataset
+
 import time
+import math
+
 from torch.autograd import Variable
 from ..utils import image_util
 
@@ -49,31 +52,40 @@ def save_checkpoint(state, is_best, filename=''):
     else:
         print ("=> Validation did not improve")
 
-def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, cuda, batch_size, epoch, start_epoch, num_output, path, best_lost): 
+# def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, cuda, batch_size, epoch, start_epoch, num_output, path, best_loss):
+def train(model, epoch, path):
     """Perform a full training over dataset"""
     average_time = 0
     # Model train mode
     model.train()
+    batch_size, start_epoch, num_output, best_loss = model.train_utility_parameters()
+    train_dataset, train_loader, test_loader = model.train_utility_dataset()
+    cuda = model.isCudaAvailable()
+
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         batch_time = time.time()
+        
         images = Variable(images).float()
         target = Variable(target).float()
         if cuda:
             images, target = images.cuda(), target.cuda()
         # Forward + Backward + Optimize
-        optimizer.zero_grad()
+        model.optimizer().zero_grad()
+
+        #print(images.shape)
+
         outputs = model(images)
         outputs = outputs.float()
         #print('Output Size: '+str(outputs.size(0)))
         #print(target)
         #print('Target Size: '+str(target.size(0)))
-        loss = loss_fn(outputs, target)
+        loss = model.loss()(outputs, target)
         # Load loss on CPU
         if cuda:
             loss.cpu()
         loss.backward()
-        optimizer.step()
+        model.optimizer().step()
         # Measure elapsed time
         batch_time = time.time() - batch_time
         # Accumulate over batch
@@ -93,13 +105,13 @@ def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, c
             loss.data,
             #accuracy,
             average_time/print_every))  # Average
-    loss, iou = eval(model, optimizer, test_loader, cuda, num_output)
+    loss, iou = eval(model, model.optimizer(), test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
     is_best = bool(loss < best_loss)
     if is_best:
         best_loss = loss
         # Save checkpoint if is a new best
-        train_engine.save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': self.state_dict(), 'best_loss': best_loss}, is_best, path)
+        save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(), 'best_loss': best_loss}, is_best, path)
     return loss, iou
 
 

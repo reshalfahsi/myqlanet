@@ -22,11 +22,11 @@ It provides end to end system for macula detection with graphical user interface
 * OpenCV and scikit-image (Computer Vision Framework)
 
 
-## Instalation
+## Installation
 
 ~~~
 sudo apt install pyqt5-dev-tools
-sudo pip3 install -r requirements.txt
+sudo pip3 install -r requirements.txt --no-cache-dir
 python3 app.py
 ~~~
 

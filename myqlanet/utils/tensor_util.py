@@ -1,4 +1,5 @@
 import torch
+import torchvision.transforms as transforms
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""

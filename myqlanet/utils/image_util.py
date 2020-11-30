@@ -2,6 +2,9 @@ import cv2
 from skimage import io
 from skimage.transform import resize
 
+VALID_IMAGE_FORMATS = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+VALID_IMAGE_SIZE = (1799, 2699)
+
 def bb_intersection_over_union(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
     xA = max(boxA[0], boxB[0])
@@ -40,21 +43,21 @@ class CropImage():
             img = cv2.imread(self.file_path)
             height = img.shape[0]
             width = img.shape[1]
-            center = [height/2.0, width/2.0];
-            startX = center[1]-float(self.crop_percentage/100.0)*center[1];
-            startY = center[0]-float(self.crop_percentage/100.0)*center[0];
-            lengthX = 2*float(self.crop_percentage/100.0)*center[1];
-            lengthY = 2*float(self.crop_percentage/100.0)*center[0];
+            center = [height/2.0, width/2.0]
+            startX = center[1]-float(self.crop_percentage/100.0)*center[1]
+            startY = center[0]-float(self.crop_percentage/100.0)*center[0]
+            lengthX = 2*float(self.crop_percentage/100.0)*center[1]
+            lengthY = 2*float(self.crop_percentage/100.0)*center[0]
             self.crop_img = img[int(startY):int(startY+lengthY), int(startX):int(startX+lengthX)]
 
     def run(self,img):
         height = img.shape[0]
         width = img.shape[1]
-        center = [height/2.0, width/2.0];
-        startX = center[1]-float(self.crop_percentage/100.0)*center[1];
-        startY = center[0]-float(self.crop_percentage/100.0)*center[0];
-        lengthX = 2*float(self.crop_percentage/100.0)*center[1];
-        lengthY = 2*float(self.crop_percentage/100.0)*center[0];
+        center = [height/2.0, width/2.0]
+        startX = center[1]-float(self.crop_percentage/100.0)*center[1]
+        startY = center[0]-float(self.crop_percentage/100.0)*center[0]
+        lengthX = 2*float(self.crop_percentage/100.0)*center[1]
+        lengthY = 2*float(self.crop_percentage/100.0)*center[0]
         self.crop_img = img[int(startY):int(startY+lengthY), int(startX):int(startX+lengthX)]
         return self.crop_img
 

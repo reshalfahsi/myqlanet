@@ -88,22 +88,23 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.plt.clear()
         t = np.linspace(0, 10, 101)
         #self.plt.set_ylim(-1.1, 1.1)
-        self.plt.plot(t, np.sin(t + time.time()), '-r', label="loss")
-        self.plt.legend(loc='upper left')
+        # self.plt.plot(t, np.sin(t + time.time()), '-r', label="loss")
+        # self.plt.legend(loc='upper left')
         x_lim = self.plt.get_xlim()
         y_lim = self.plt.get_ylim()
         x_text = x_lim[0] + ((x_lim[1] - x_lim[0])/64)
         y_text = y_lim[1] - ((y_lim[1] - y_lim[0])/5)
+        
         if(self.isTrain):
             self.epoch_now, loss = self.myqlanet.update_loss()
             _, self.iou_now = self.myqlanet.update_iou()
             if(self.epoch_now > self.last_epoch):
-                list_loss.append(loss)
+                self.list_loss.append(loss)
                 self.last_epoch = self.epoch_now
             elif(self.last_epoch >= 0):
                 self.list_loss[self.last_epoch] = loss
             index_loss = range(self.epoch_now + 1)
-            plt.plot(index_loss, list_loss, '-r', label="loss")
+            self.plt.plot(index_loss, self.list_loss, '-r', label="loss")
             self.plt.legend(loc='upper left')
             percent = float(float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0
             self.training_progress.setValue(percent)
@@ -212,15 +213,18 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         missing = True
         dataset_path = os.path.join(self.filenames_train, "annotation.csv")
         weight_path = os.path.join(self.filenames_train, "weight.pth")
-        if(os.path.exists(name)):
+        if(os.path.exists(self.filenames_train)):
             missing = False
         if (missing):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[0])
         else:
             self.isTrain = True
+            # print(dataset_path)
             dataset = MaculaDataset(dataset_path,self.filenames_train)
-            self.myqlanet.compile((dataset))
+            # print(dataset)
+            # self.myqlanet.compile((dataset))
+            self.myqlanet.compile(dataset)
             self.isTrainSuccess = self.myqlanet.fit(weight_path)
             self.isTrain = False
             self.training_status_label.setText("Training Progress : Finished")
@@ -276,7 +280,8 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 except FileExistsError:
                     print("Directory " , result_path ,  " already exists")
                 result_csv_path = os.path.join(root_path, "result/result.csv")
-            if(result == None):
+            # if(result == None):
+            if(len(result) == 0):
                 dlg.exec_()
                 self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
                 return None
@@ -285,6 +290,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             csv_file.write('img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
             csv_file.close() 
             for idx, bbox in enumerate(self.annotation_data):
+                # print(bbox)
                 start_point = (int(bbox[3]), int(bbox[2]))
                 end_point = (int(bbox[1]), int(bbox[0]))
                 color = (0, 255, 0)

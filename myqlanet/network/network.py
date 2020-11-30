@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from . import train_engine
-from . import predict_engine
+from . import train
+from . import predict
 import os
 from ..preprocessing import MaculaDataset
 from ..utils import dataset_util
+from ..utils import *
 
 class MyQLaNet(nn.Module):
     """
@@ -14,7 +15,11 @@ class MyQLaNet(nn.Module):
     """
     def __init__(self):
         super(MyQLaNet, self).__init__()
+        
+        self.iscuda = torch.cuda.is_available()
+
         self.num_output = 4
+        
         self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride = 2, padding=1)
@@ -26,29 +31,38 @@ class MyQLaNet(nn.Module):
         self.fc1 = nn.Linear(704, 128)
         self.drop2 = nn.Dropout2d(p=0.5)
         self.fc2 = nn.Linear(128, self.num_output)
-        self.iscuda = torch.cuda.is_available()
+        
+        self.loss_fn = nn.MSELoss()
+
         if self.iscuda:
             self.cuda()
+            self.loss_fn.cuda()
+        
         self.train_loader = None
         self.test_loader = None
-        self.loss_fn = nn.MSELoss()
-        if self.iscuda:
-            self.loss_fn.cuda()
+            
         self.batch_size = 1
         self.learning_rate = 1e-3
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        
         self.best_loss = 9.9999999999e9
-        self.num_epochs = 1500
         self.start_epoch = 0
+
+        self.num_epochs = 100 # 1500
+        
         self.train_dataset = None
         self.test_dataset = None
+        
         self.loss_now = 9e6
         self.iou_now = 0
         self.epoch_now = 0
         
     def forward(self, x):
+        #print(x.shape)
+        # x = self.conv1(x)
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+        # x = self.conv2(x)
         x = self.drop1(x)
         x = self.conv3(x)
         x = self.conv4(x)
@@ -61,39 +75,73 @@ class MyQLaNet(nn.Module):
         x = self.fc2(x)
         return F.relu(x)
 
+    def optimizer(self):
+        return self.optim
+
+    def loss(self):
+        return self.loss_fn
+
+    def isCudaAvailable(self):
+        return self.iscuda
+
+    def train_utility_dataset(self):
+        return self.train_dataset, self.train_loader, self.test_loader
+
+    def train_utility_parameters(self):
+        return self.batch_size, self.start_epoch, self.num_output, self.best_loss
+
     def update_loss(self):
         return self.epoch_now, self.loss_now
 
     def update_iou(self):
         return self.epoch_now, self.iou_now
 
-    def compile(self, dataset):
-        """
-        """
+    def compile(self, dataset = None, _loss_fn = None, _optimizer = None):
+
+        if _loss_fn is not None:
+            self.loss_fn = _loss_fn
+            if self.iscuda:
+                self.loss_fn.cuda()
+
+        if _optimizer is not None:
+            self.optim = _optimizer
+
+        if dataset is None:
+            print("Please insert a valid dataset format.")
+            return
+
         train_dataset = None
         test_dataset = None
-        print(dataset)
-        try:
-            dummy = dataset[2]
-            print("Argument Invalid!")
-            return None
-        except:
-            try:
-                train_dataset, test_dataset = dataset[0], dataset[1] 
-            except:
-                try:
-                    train_dataset, test_dataset = dataset_util.split_train_test(dataset)
-                except:
-                    print("Please Insert Path!")
-        if (train_dataset == None):
-           return None
-        self.train_dataset = train_dataset
-        self.test_dataset = test_dataset
-        self.train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=self.batch_size, shuffle=False) 
+        # print(dataset[0])
+
+        # train_dataset, test_dataset = dataset_util.split_train_test(dataset)
+        # print(train_dataset)
+
+        # try:
+        #     dummy = dataset[2]
+        #     print("Argument Invalid!")
+        #     return None
+        # except:
+        #     try:
+        #         train_dataset, test_dataset = dataset[0], dataset[1] 
+        #     except:
+        #         print("Split from Dataset Class")
+        #         try:
+        #             train_dataset, test_dataset = dataset_util.split_train_test(dataset[0])
+        #         except:
+        #             print("Please Insert Path!")
+
+        # if (train_dataset == None):
+        #     print("Train Dataset is None!")
+        #     return None
+        
+        self.train_dataset = dataset #train_dataset
+        self.test_dataset = dataset #test_dataset
+        self.train_loader = torch.utils.data.DataLoader(dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True)
+        self.test_loader = torch.utils.data.DataLoader(dataset=self.test_dataset, batch_size=self.batch_size, shuffle=False) 
 
 
-    def fit(self,path = ''):
+    def fit(self, path = ''):
         success = False
         if path == '':
            print("Please Insert Path!")
@@ -113,8 +161,9 @@ class MyQLaNet(nn.Module):
             except:
                 print("Training Failed!")
                 return success
-        for epoch in range(num_epochs):
-            self.loss_now, self.iou_now = train_engine.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
+        for epoch in range(self.num_epochs):
+            self.loss_now, self.iou_now = train.train(self, epoch, path)
+            # train.train(self, self.train_dataset, self.optimizer, self.train_loader, self.test_loader, self.loss_fn, self.iscuda, self.batch_size, epoch, self.start_epoch, self.num_output, path, self.best_loss)
             self.epoch_now = epoch
             success = True
         return success 
@@ -141,5 +190,6 @@ class MyQLaNet(nn.Module):
         else:
             print("Please Train your Network First!")
             return None
-        ret = predict(self, path, self.iscuda)
+        ret = predict.predict(self, path)
+        # (self, path, self.iscuda)
         return ret

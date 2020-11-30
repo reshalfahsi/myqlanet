@@ -1,5 +1,5 @@
 import os
-from ..utils import CropImage, ResizeImage
+from ..utils import CropImage, ResizeImage, VALID_IMAGE_FORMATS
 
 class DirectoryHandler():
     def __init__(self):
@@ -8,7 +8,7 @@ class DirectoryHandler():
         self.crop = CropImage()
         self.path = ''
         self.resize = ResizeImage()
-        self.valid_image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+        self.valid_image_extensions = VALID_IMAGE_FORMATS
         self.names = []
 
     def setPath(self,path):
@@ -40,7 +40,7 @@ class FileHandler():
         self.path = ''
         self.resize = ResizeImage()
         self.names = ''
-        self.valid_image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+        self.valid_image_extensions = VALID_IMAGE_FORMATS
 
     def setPath(self,path):
         self.path = path

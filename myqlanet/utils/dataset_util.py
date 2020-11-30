@@ -10,7 +10,7 @@ import os
 import random
 import math
 
-valid_image_extensions = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
+from .image_util import VALID_IMAGE_FORMATS
 
 def split_train_test(dataset):
     train = None
@@ -39,7 +39,7 @@ def split_train_test(dataset):
     data_idx = 0
 
     for file in os.listdir(root_dir):
-        if any(file.endswith(ext) for ext in valid_image_extensions):
+        if any(file.endswith(ext) for ext in VALID_IMAGE_FORMATS):
             bbox = csv_file.iloc[data_idx, 1:]
             bbox = np.array(bbox)
             bbox = bbox.astype('float').reshape(-1)

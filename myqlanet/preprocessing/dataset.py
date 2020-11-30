@@ -1,10 +1,13 @@
 import torch
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 from skimage import io
 import numpy as np
 import pandas as pd
+import os
 from .ggb import GGB
-from ..utils import *
+from ..utils import CropImage, ResizeImage, VALID_IMAGE_SIZE
+from ..utils import ToTensor
 
 class MaculaDataset(Dataset):
     """Macula dataset."""
@@ -16,9 +19,12 @@ class MaculaDataset(Dataset):
         transform (callable, optional): Optional transform to be applied
         on a sample.
         """
-        self.macula_frame = pd.read_csv(csv_file)
+        self.macula_frame = pd.read_csv(csv_file, skipinitialspace = True)
         self.root_dir = root_dir
-        self.transform = transform
+        if transform is None:
+            self.transform = transforms.Compose([ToTensor()])
+        else:
+            self.transform = transform
         self.csv_file = csv_file
         self.crop = CropImage()
         self.resize = ResizeImage()
@@ -28,14 +34,18 @@ class MaculaDataset(Dataset):
         return len(self.macula_frame)
 
     def __getitem__(self, idx):
+
+        print("Constructing Dataset")
+
         if torch.is_tensor(idx):
             idx = idx.tolist()
 
         img_name = os.path.join(self.root_dir, self.macula_frame.iloc[idx, 0])
+        # print(self.macula_frame.iloc[idx, 0])
 
         image = io.imread(img_name)
         image = self.crop.run(image)
-        image = self.resize.run(image,(1799, 2699))
+        image = self.resize.run(image, VALID_IMAGE_SIZE)
         image = self.ggb.run(image)
         bbox = self.macula_frame.iloc[idx, 1:]
         bbox = np.array(bbox)
