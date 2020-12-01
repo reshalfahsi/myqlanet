@@ -38,15 +38,15 @@ def predict(model, path):
                 output = output.cpu().detach().numpy()
                 result.append(output)
     else:
-        temp = os.path.splitext(self.filenames)
+        temp = os.path.splitext(path)
         extension = temp[1]
-        if(extension in self.valid_image_extensions):
+        if(extension in VALID_IMAGE_FORMATS):
             image = cv2.imread(path)
             image = crop_img.run(image)
             image = resize_img.run(image,VALID_IMAGE_SIZE)
             image = ggb.run(image)
             image_tensor = image.transpose((2, 0, 1))
-            if cuda: 
+            if model.isCudaAvailable(): 
                 image_tensor = torch.from_numpy(image_tensor).float().to('cuda')
             else:
                 image_tensor = torch.from_numpy(image_tensor).float()
