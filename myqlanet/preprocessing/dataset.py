@@ -19,7 +19,10 @@ class MaculaDataset(Dataset):
         transform (callable, optional): Optional transform to be applied
         on a sample.
         """
-        self.macula_frame = pd.read_csv(csv_file, skipinitialspace = True)
+        if(isinstance(csv_file, str)):
+            self.macula_frame = pd.read_csv(csv_file, skipinitialspace = True)
+        else:
+            self.macula_frame = csv_file
         self.root_dir = root_dir
         if transform is None:
             self.transform = transforms.Compose([ToTensor()])

@@ -10,6 +10,7 @@ class GGB():
         self.path = path
 
     def process(self):
+        ''' opencv format '''
         self.img = cv2.imread(self.path)
         img_yuv = cv2.cvtColor(self.img.astype('uint8'), cv2.COLOR_BGR2YUV)
         img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
@@ -21,6 +22,7 @@ class GGB():
         return self.img
 
     def run(self, img):
+        ''' skimage format '''
         img_yuv = cv2.cvtColor(img.astype('uint8'), cv2.COLOR_RGB2YUV)
         img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
         img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)

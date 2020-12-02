@@ -71,10 +71,12 @@ class ResizeImage():
     def __init__(self):
         self.result = None
 
-    def process(self, img, dim):
+    def process(self, img, dim): 
+        ''' opencv format '''
         self.result = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
-    def run(self, img, dim):
+    def run(self, img, dim): 
+        ''' skimage format '''
         self.result = resize(img, dim)
         return self.result
 

@@ -10,7 +10,7 @@ class DatasetAdjustment():
         self.dataset = None 
  
     def setPath(self, file_dir, root_dir):
-        self.path = _path
+        # self.path = _path
         self.dataset = MaculaDataset(csv_file = file_dir,root_dir = root_dir, transform = transforms.Compose([ToTensor()]))
 
     def getResult(self):

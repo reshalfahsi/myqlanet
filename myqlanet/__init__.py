@@ -11,6 +11,6 @@ from .dataset_adjustment import DatasetAdjustment
 from .network import MyQLaNet
 from .image_adjustment import ImageAdjustment
 from .preprocessing import MaculaDataset, GGB
-from .utils import ToTensor
+from .utils import ToTensor, CropImage, ResizeImage, VALID_IMAGE_SIZE
 
 __version__ = '1.0.1'

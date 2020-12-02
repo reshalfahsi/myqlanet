@@ -87,6 +87,10 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
 
         self.bbox_annotation = []
         self.annotation_df = None
+        self.bbox_prediction = {}
+        self.predict_df = None
+        self.predict_csv_file = ''
+        self.images_predicted_names = []
 
         self.weight_path = ''
         self.train_thread = threading.Thread(target=self.train_thread_fn)
@@ -218,8 +222,11 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.imshow_predict.setScaledContents(True)
 
     def save_predict(self):
+        
+        self.predict_df.to_csv(self.predict_csv_file, index=False)
+        print("Prediction Data Saved!")
         dlg = AlertDialog(self)
-        dlg.setStatus('openfile_issue')
+        dlg.setStatus('saved')
         dlg.exec_()
 
     def save_train(self):
@@ -247,7 +254,8 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             elif(wh[0] > 0 and wh[1] < 0):
                 point[1] += wh[1]
                 wh[1] = abs(wh[1])
-            bbox = (point[1] + wh[1], point[0] + wh[0], point[1], point[0])  # y+h,x+w,y,x
+            bbox = (point[1] + wh[1], point[0] + wh[0],
+                    point[1], point[0])  # y+h,x+w,y,x
             point[0] *= scaledX
             point[0] = int(point[0])
             point[1] *= scaledY
@@ -259,7 +267,6 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             endpoint = (point[0] + wh[0], point[1] + wh[1])
 
             self.bbox_annotation[self.current_idx] = bbox
-            # if(self.annotation_df is not None):
             self.annotation_df.iloc[self.current_idx, 1:] = np.array(
                 [endpoint[1], endpoint[0], point[1], point[0]])
             # else:
@@ -310,85 +317,146 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         missing = True
         result = None
         weight_path = ''
-        if(self.isPredictFolder):
-            weight_path = os.path.join(self.filenames, "weight.pth")
-            if(os.path.exists(weight_path)):
-                missing = False
-        else:
-            weight_path = os.path.dirname(os.path.abspath(self.filenames))
-            weight_path = os.path.join(weight_path, "weight.pth")
-            if(os.path.exists(weight_path)):
-                missing = False
+        # if(self.isPredictFolder):
+        weight_path = os.path.join(self.filenames, "weight.pth")
+        if(os.path.exists(weight_path)):
+            missing = False
+        # else:
+        #    weight_path = os.path.dirname(os.path.abspath(self.filenames))
+        #    weight_path = os.path.join(weight_path, "weight.pth")
+        #    if(os.path.exists(weight_path)):
+        #        missing = False
         if (missing):
             dlg.exec_()
             self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
         else:
-            result_path = ''
-            result_csv_path = ''
-            if(self.isPredictFolder):
-                #dataset_path = os.path.join(self.filenames, "annotation.csv")
-                #dataset = MaculaDataset(dataset_path,self.filenames)
-                # self.myqlanet.compile((dataset,dataset))
-                result = self.myqlanet.predict(weight_path, self.filenames)
-                result_path = os.path.join(self.filenames, "result")
-                try:
-                    os.mkdir(result_path)
-                    print("Directory ", result_path,  " Created ")
-                except FileExistsError:
-                    print("Directory ", result_path,  " already exists")
-                result_csv_path = os.path.join(
-                    self.filenames, "result/result.csv")
+            path = os.path.join(
+                self.filenames, self.images_to_predict_names[self.current_predict_idx])
+            result = self.myqlanet.predict(weight_path, path)
+            print(result)
+
+            dummy_df = self.predict_df
+            dummy_df.set_index('img_name')
+
+            if (self.images_to_predict_names[self.current_predict_idx] in dummy_df.index):
+                idx = self.predict_df.index[self.predict_df['img_name'] ==
+                                            self.images_to_predict_names[self.current_predict_idx]].tolist()
+                idx = idx[0]
+                self.predict_df.iloc[idx, 1:] = np.array(
+                    [result[0], result[1], result[2], result[3]])
             else:
-                root_path = os.path.dirname(os.path.abspath(self.filenames))
-                #dataset_path = os.path.join(root_path, "annotation.csv")
-                #dataset = MaculaDataset(dataset_path, root_path)
-                # self.myqlanet.compile((dataset))
-                result = self.myqlanet.predict(weight_path, root_path)
-                result_path = os.path.join(root_path, "result")
-                try:
-                    os.mkdir(result_path)
-                    print("Directory ", result_path,  " Created ")
-                except FileExistsError:
-                    print("Directory ", result_path,  " already exists")
-                result_csv_path = os.path.join(root_path, "result/result.csv")
-            # if(result == None):
-            if(len(result) == 0):
-                dlg.exec_()
-                self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
-                return None
-            self.annotation_data = result
-            csv_file = open(result_csv_path, "w")
-            csv_file.write(
-                'img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
-            csv_file.close()
-            for idx, bbox in enumerate(self.annotation_data):
-                # print(bbox)
-                start_point = (int(bbox[3]), int(bbox[2]))
-                end_point = (int(bbox[1]), int(bbox[0]))
-                color = (0, 255, 0)
-                thickness = 4
-                self.images_to_predict[idx] = cv2.rectangle(
-                    self.images_to_predict[idx], start_point, end_point, color, thickness)
-                image_name = os.path.join(
-                    result_path, self.images_to_predict_names[idx])
-                cv2.imwrite(image_name, self.images_to_predict[idx])
-                data = str(str(self.images_to_predict_names[idx]) + ', ' + str(end_point[1]) + ', ' + str(
-                    end_point[0]) + ', ' + str(start_point[1]) + ', ' + str(end_point[0]))
-                csv_file = open(result_csv_path, "a")
-                csv_file.write(data)
-                csv_file.close()
+                new_predict = {'img_name': self.images_to_predict_names[self.current_predict_idx],
+                               'y_lower': result[0], 'x_lower': result[1], 'y_upper': result[2], 'x_upper': result[3]}
+                self.predict_df.append(new_predict, ignore_index=True)
+                print("New Prediction")
+
+            if(self.images_to_predict_names[self.current_predict_idx] not in self.images_predicted_names):
+                self.images_predicted_names.append(
+                    self.images_to_predict_names[self.current_predict_idx])
+
+            # crop = CropImage()
+            resize = ResizeImage()
+            image_name = os.path.join(
+                self.filenames, self.images_to_predict_names[self.current_predict_idx])
+            print(image_name)
+            image = cv2.imread(image_name)
+            orig_size = (image.shape[0], image.shape[1])
+            print(image.shape)
+            # image = crop.run(image)
+            resize.process(image,VALID_IMAGE_SIZE)
+            image = resize.getResult()
+            image_name = os.path.join(self.filenames, str(
+                'result/' + self.images_to_predict_names[self.current_predict_idx]))
+            start_point = (int(result[3]), int(result[2]))
+            end_point = (int(result[1]), int(result[0]))
+            print(start_point, end_point)
+            color = (0, 255, 0)
+            thickness = 4
+            image = cv2.rectangle(image, start_point,
+                                  end_point, color, thickness)
+            # resize.process(image, orig_size)
+            # image = resize.getResult()
+            cv2.imwrite(image_name, image)
+            print(image_name)
+
+            # result_path = ''
+            # result_csv_path = ''
+            # if(self.isPredictFolder):
+
+            #     #dataset_path = os.path.join(self.filenames, "annotation.csv")
+            #     #dataset = MaculaDataset(dataset_path,self.filenames)
+            #     # self.myqlanet.compile((dataset,dataset))
+
+            #     result = self.myqlanet.predict(weight_path, self.filenames)
+            #     result_path = os.path.join(self.filenames, "result")
+            #     try:
+            #         os.mkdir(result_path)
+            #         print("Directory ", result_path,  " Created ")
+            #     except FileExistsError:
+            #         print("Directory ", result_path,  " already exists")
+            #     result_csv_path = os.path.join(
+            #         self.filenames, "result/result.csv")
+
+            # else:
+
+            #     root_path = os.path.dirname(os.path.abspath(self.filenames))
+
+            #     #dataset_path = os.path.join(root_path, "annotation.csv")
+            #     #dataset = MaculaDataset(dataset_path, root_path)
+            #     # self.myqlanet.compile((dataset))
+
+            #     result = self.myqlanet.predict(weight_path, root_path)
+            #     result_path = os.path.join(root_path, "result")
+            #     try:
+            #         os.mkdir(result_path)
+            #         print("Directory ", result_path,  " Created ")
+            #     except FileExistsError:
+            #         print("Directory ", result_path,  " already exists")
+            #     result_csv_path = os.path.join(root_path, "result/result.csv")
+
+            # # if(result == None):
+
+            # if(len(result) == 0):
+            #     dlg.exec_()
+            #     self.tabWidget.setCurrentIndex(self.error_tab_idx[1])
+            #     return None
+
+            # self.annotation_data = result
+
+            # csv_file = open(result_csv_path, "w")
+            # csv_file.write(
+            #     'img_name, y_lower, x_lower, y_upper, x_upper' + '\n')
+            # csv_file.close()
+
+            # for idx, bbox in enumerate(self.annotation_data):
+            #     # print(bbox)
+            #     start_point = (int(bbox[3]), int(bbox[2]))
+            #     end_point = (int(bbox[1]), int(bbox[0]))
+            #     color = (0, 255, 0)
+            #     thickness = 4
+            #     self.images_to_predict[idx] = cv2.rectangle(
+            #         self.images_to_predict[idx], start_point, end_point, color, thickness)
+            #     image_name = os.path.join(
+            #         result_path, self.images_to_predict_names[idx])
+            #     cv2.imwrite(image_name, self.images_to_predict[idx])
+            #     data = str(str(self.images_to_predict_names[idx]) + ', ' + str(end_point[1]) + ', ' + str(
+            #         end_point[0]) + ', ' + str(start_point[1]) + ', ' + str(end_point[0]))
+            #     csv_file = open(result_csv_path, "a")
+            #     csv_file.write(data)
+            #     csv_file.close()
 
     def prev_pressed(self):
         self.current_idx -= 1
         if(self.current_idx < 0):
             self.current_idx = 0
         else:
-            pass
+            self.annotate_canvas_img.deleteRect()
         self.current_annotate.setText(
             "Current : " + str(self.current_idx + 1) + '/' + str(self.total_idx + 1))
-        rect = (self.bbox_annotation[self.current_idx][3], self.bbox_annotation[self.current_idx]
-                [2], self.bbox_annotation[self.current_idx][1], self.bbox_annotation[self.current_idx][0])
-        self.annotate_canvas_img.setRect(rect)
+        if self.bbox_annotation[self.current_idx] is not None:
+            rect = (self.bbox_annotation[self.current_idx][3], self.bbox_annotation[self.current_idx]
+                    [2], self.bbox_annotation[self.current_idx][1], self.bbox_annotation[self.current_idx][0])
+            self.annotate_canvas_img.setRect(rect)
         if (len(self.images_names) > 0):
             height, width, channel = self.images[self.current_idx].shape
             bytesPerLine = 3 * width
@@ -403,12 +471,13 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         if(self.current_idx > self.total_idx):
             self.current_idx = self.total_idx
         else:
-            pass
+            self.annotate_canvas_img.deleteRect()
         self.current_annotate.setText(
             "Current : " + str(self.current_idx + 1) + '/' + str(self.total_idx + 1))
-        rect = (self.bbox_annotation[self.current_idx][3], self.bbox_annotation[self.current_idx]
-                [2], self.bbox_annotation[self.current_idx][1], self.bbox_annotation[self.current_idx][0])
-        self.annotate_canvas_img.setRect(rect)
+        if self.bbox_annotation[self.current_idx] is not None:
+            rect = (self.bbox_annotation[self.current_idx][3], self.bbox_annotation[self.current_idx]
+                    [2], self.bbox_annotation[self.current_idx][1], self.bbox_annotation[self.current_idx][0])
+            self.annotate_canvas_img.setRect(rect)
         if (len(self.images_names) > 0):
             height, width, channel = self.images[self.current_idx].shape
             bytesPerLine = 3 * width
@@ -477,13 +546,13 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.annotate_canvas_img.setRect(rect)
 
     def getfilePredict(self):
-        dlg = OpenFile(self)
-        dlg.exec_()
-        try:
-            names = dlg.getFileName()
-            if names == '':
-                return None
-            self.filenames = names
+
+        dlg = QFileDialog()
+        dlg.setFileMode(QFileDialog.Directory)
+
+        if dlg.exec_():
+            self.filenames = dlg.selectedFiles()
+            self.filenames = self.filenames[0]
             if(os.path.isdir(self.filenames)):
                 self.images_to_predict = []
                 self.images_to_predict_names = []
@@ -507,20 +576,82 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 pixmap = QPixmap.fromImage(qImg)
                 self.imshow_predict.setPixmap(pixmap)
                 self.imshow_predict.setScaledContents(True)
-            else:
-                self.isPredictFolder = False
-                self.image_adjustment.setPath(self.filenames)
-                self.images_to_predict = self.image_adjustment.getResult()
-                self.images_to_predict_names = self.image_adjustment.getNames()
-                height, width, channel = self.images_to_predict.shape
-                bytesPerLine = 3 * width
-                qImg = QImage(self.images_to_predict.data, width, height,
-                              bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-                pixmap = QPixmap.fromImage(qImg)
-                self.imshow_predict.setPixmap(pixmap)
-                self.imshow_predict.setScaledContents(True)
-        except:
-            print("Please Select the File!")
+
+                result_path = os.path.join(self.filenames, "result")
+                self.predict_csv_file = os.path.join(
+                    result_path, "prediction.csv")
+                # bbox_start = None
+
+                try:
+                    os.mkdir(result_path)
+                    print("Directory ", result_path,  " Created ")
+
+                    data = {'img_name': [], 'y_lower': [],
+                            'x_lower': [], 'y_upper': [], 'x_upper': []}
+                    self.predict_df = pd.DataFrame(data)
+
+                except FileExistsError:
+                    print("Directory ", result_path,  " already exists")
+                    if(os.path.exists(self.predict_csv_file)):
+                        self.predict_df = pd.read_csv(
+                            self.predict_csv_file, skipinitialspace=True)
+                        bboxes = self.predict_df.iloc[:, 1:]
+                        bboxes = bboxes.to_numpy().astype(np.int32)
+                        for idx, bbox in enumerate(bboxes):
+                            img_size = self.images_to_predict[idx].shape
+                            scaledX = self.target_size[0]/img_size[0]
+                            scaledY = self.target_size[1]/img_size[1]
+                            self.bbox_prediction[self.images_to_predict_names[idx]] = (
+                                bbox[0] * scaledY, bbox[1] * scaledX, bbox[2] * scaledY, bbox[3] * scaledX)
+                    else:
+                        data = {'img_name': [], 'y_lower': [],
+                                'x_lower': [], 'y_upper': [], 'x_upper': []}
+                        self.predict_df = pd.DataFrame(data)
+
+        # dlg = OpenFile(self)
+        # dlg.exec_()
+        # try:
+        #     names = dlg.getFileName()
+        #     if names == '':
+        #         return None
+        #     self.filenames = names
+        #     if(os.path.isdir(self.filenames)):
+        #         self.images_to_predict = []
+        #         self.images_to_predict_names = []
+        #         self.total_predict_idx = 0
+        #         self.isPredictFolder = True
+        #         self.image_adjustment.setPath(self.filenames)
+        #         self.images_to_predict = self.image_adjustment.getResult()
+        #         self.images_to_predict_names = self.image_adjustment.getNames()
+        #         self.total_predict_idx = len(self.images_to_predict)
+        #         self.current_predict_idx = 0
+        #         if(self.total_predict_idx > 0):
+        #             self.total_predict_idx -= 1
+        #         self.total_predict.setText(
+        #             "Total : " + str(self.total_predict_idx + 1))
+        #         self.current_predict.setText(
+        #             "Current : " + str(self.current_predict_idx + 1) + '/' + str(self.total_predict_idx + 1))
+        #         height, width, channel = self.images_to_predict[self.current_predict_idx].shape
+        #         bytesPerLine = 3 * width
+        #         qImg = QImage(self.images_to_predict[self.current_predict_idx].data,
+        #                       width, height, bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+        #         pixmap = QPixmap.fromImage(qImg)
+        #         self.imshow_predict.setPixmap(pixmap)
+        #         self.imshow_predict.setScaledContents(True)
+        #     else:
+        #         self.isPredictFolder = False
+        #         self.image_adjustment.setPath(self.filenames)
+        #         self.images_to_predict = self.image_adjustment.getResult()
+        #         self.images_to_predict_names = self.image_adjustment.getNames()
+        #         height, width, channel = self.images_to_predict.shape
+        #         bytesPerLine = 3 * width
+        #         qImg = QImage(self.images_to_predict.data, width, height,
+        #                       bytesPerLine, QImage.Format_RGB888).rgbSwapped()
+        #         pixmap = QPixmap.fromImage(qImg)
+        #         self.imshow_predict.setPixmap(pixmap)
+        #         self.imshow_predict.setScaledContents(True)
+        # except:
+        #     print("Please Select the File!")
 
         self.next_predict_button.setVisible(self.isPredictFolder)
         self.prev_predict_button.setVisible(self.isPredictFolder)

@@ -8,9 +8,9 @@ matrix:
       cache: pip
 
       before_install:
-        - sudo apt install python3-pip
+        # - sudo apt install python3-pip
         - sudo apt install pyqt5-dev-tools
-        #- sudo pip3 install -r requirements.txt       
+        # - sudo pip3 install -r requirements.txt       
 
 script:
   - echo "Yeet"

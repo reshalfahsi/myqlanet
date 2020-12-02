@@ -8,7 +8,7 @@ import math
 from torch.autograd import Variable
 from ..utils import image_util
 
-def eval(model, optimizer, test_loader, cuda, num_output):
+def eval(model, test_loader, cuda, num_output):
     """Eval over test set"""
     model.eval()
     ret_loss = 0
@@ -16,6 +16,7 @@ def eval(model, optimizer, test_loader, cuda, num_output):
     idx = 0
     # Get Batch
     for (data, target) in test_loader:
+        # print("evaluating...")
         loss = 0
         iou = 0
         idx += 1
@@ -38,7 +39,7 @@ def eval(model, optimizer, test_loader, cuda, num_output):
         ret_loss += loss
         iou = float(image_util.bb_intersection_over_union((gt_start_point[0], gt_start_point[1], gt_end_point[0], gt_end_point[1]),(start_point[0], start_point[1], end_point[0], end_point[1])))
         ret_iou += iou
-    ret_iou /= float(idx)
+    ret_iou /= (float(idx) + 1.0)
     return ret_loss, ret_iou
 
 def save_checkpoint(state, is_best, filename=''):
@@ -99,15 +100,15 @@ def train(model, epoch, path):
         if (i + 1) % print_every == 0:
             print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f, Batch time: %f'
             % (epoch + 1,
-            num_epochs,
+            model.max_epoch(),
             i + 1,
             len(train_dataset) // batch_size,
             loss.data,
             #accuracy,
             average_time/print_every))  # Average
-    loss, iou = eval(model, model.optimizer(), test_loader, cuda, num_output)
+    loss, iou = eval(model, test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
-    is_best = bool(loss < best_loss)
+    is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss
         # Save checkpoint if is a new best
