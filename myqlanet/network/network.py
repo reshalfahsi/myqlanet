@@ -50,7 +50,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 5  # 1500
+        self.num_epochs = 1500
 
         self.train_dataset = None
         self.test_dataset = None

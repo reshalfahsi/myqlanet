@@ -3,7 +3,7 @@ from skimage import io
 from skimage.transform import resize
 
 VALID_IMAGE_FORMATS = ['.jpg', '.png', '.jpeg', '.JPG', '.PNG', '.JPEG']
-VALID_IMAGE_SIZE = (1799, 2699)
+VALID_IMAGE_SIZE = (2699, 1799)
 
 def bb_intersection_over_union(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
