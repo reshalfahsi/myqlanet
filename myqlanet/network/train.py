@@ -62,6 +62,7 @@ def train(model, epoch, path):
     batch_size, start_epoch, num_output, best_loss = model.train_utility_parameters()
     train_dataset, train_loader, test_loader = model.train_utility_dataset()
     cuda = model.isCudaAvailable()
+    train_loss = 0
 
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
@@ -96,6 +97,7 @@ def train(model, epoch, path):
         #prediction = outputs.data.max(1)[1]   # first column has actual prob.
         #accuracy = prediction.eq(target.data).sum() / batch_size * 100
         # Log
+        train_loss += loss.data
         print_every = 5
         if (i + 1) % print_every == 0:
             print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f, Batch time: %f'
@@ -106,6 +108,8 @@ def train(model, epoch, path):
             loss.data,
             #accuracy,
             average_time/print_every))  # Average
+    mean_loss = train_loss/len(train_dataset)
+    print('=> Train set: Loss: {:.2f}'.format(mean_loss))
     loss, iou = eval(model, test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
     is_best = bool(loss <= best_loss)

@@ -34,8 +34,8 @@ class MyQLaNet(nn.Module):
         self.batch_norm1 = nn.BatchNorm2d(32)
         self.batch_norm2 = nn.BatchNorm2d(64)
         
-        self.drop1 = nn.Dropout2d(p=0.2)
-        self.drop2 = nn.Dropout2d(p=0.3)
+        self.drop1 = nn.Dropout2d(p=0.25)
+        self.drop2 = nn.Dropout2d(p=0.35)
 
         self.fc1 = nn.Linear(192, 64)
         self.fc2 = nn.Linear(64,16)
@@ -51,8 +51,8 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 1e-3
-        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        self.learning_rate = 95e-4
+        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-3)
 
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
@@ -68,14 +68,35 @@ class MyQLaNet(nn.Module):
         self.epoch_now = 0
 
     def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2)
+        # x = F.relu(self.conv1(x))
+        # x = F.max_pool2d(x, 2)
+        # x = self.conv2(x)
+        # x = self.conv3(x)
+        # x = F.relu(self.batch_norm1(x))
+        # x = F.max_pool2d(x, 2)
+        # x = self.conv4(x)
+        # x = F.relu(self.batch_norm2(x))
+        # x = self.drop1(x)
+        # x = self.conv5(x)
+        # x = self.conv6(x)
+        # x = self.conv7(x)
+        # x = x.view(-1, 192)
+        # x = F.relu(self.fc1(x))
+        # x = self.drop2(x)
+        # x = F.relu(self.fc2(x))
+        # x = F.relu(self.fc3(x))
+        # return x
+        
+        x = self.conv1(x)
+        x = F.avg_pool2d(x, 2)
         x = self.conv2(x)
         x = self.conv3(x)
-        x = F.relu(self.batch_norm1(x))
-        x = F.max_pool2d(x, 2)
+        x = F.relu(x)
+        x = self.batch_norm1(x)
+        x = F.avg_pool2d(x, 2)
         x = self.conv4(x)
-        x = F.relu(self.batch_norm2(x))
+        x = F.relu(x)
+        x = self.batch_norm2(x)
         x = self.drop1(x)
         x = self.conv5(x)
         x = self.conv6(x)
