@@ -50,6 +50,8 @@ class MaculaDataset(Dataset):
         image = self.crop.run(image)
         image = self.resize.run(image, VALID_IMAGE_SIZE)
         image = self.ggb.run(image)
+        image = image.astype('float32')
+        image /= 255.0
         bbox = self.macula_frame.iloc[idx, 1:]
         bbox = np.array(bbox)
         bbox = bbox.astype('float').reshape(-1)

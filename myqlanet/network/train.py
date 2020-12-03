@@ -111,6 +111,7 @@ def train(model, epoch, path):
     is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss
+        model.update_best_loss(best_loss)
         # Save checkpoint if is a new best
         save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(), 'best_loss': best_loss}, is_best, path)
     return loss, iou

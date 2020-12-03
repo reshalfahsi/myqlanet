@@ -70,6 +70,13 @@ class AlertDialog(QDialog):
             pixmap = QPixmap("resources/icons/check.png")
             self.icon.setPixmap(pixmap)
             self.icon.setScaledContents(True)
+        elif(status == "saved_prediction"):
+            self.setWindowTitle("File Saved")
+            self.imperative.setText("Prediction File:")
+            self.suggestion.setText("Successfully Saved!")
+            pixmap = QPixmap("resources/icons/check.png")
+            self.icon.setPixmap(pixmap)
+            self.icon.setScaledContents(True)
         else:
             print('Status not Valid')
 

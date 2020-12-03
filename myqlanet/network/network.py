@@ -22,17 +22,24 @@ class MyQLaNet(nn.Module):
 
         self.num_output = 4
 
-        self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride=2, padding=1)
+        ## [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
+        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 8, kernel_size=3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         self.conv5 = nn.Conv2d(64, 32, kernel_size=3, stride=2, padding=1)
         self.conv6 = nn.Conv2d(32, 16, kernel_size=3, stride=2, padding=1)
         self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride=2, padding=1)
-        self.drop1 = nn.Dropout2d(p=0.25)
-        self.fc1 = nn.Linear(704, 128)
-        self.drop2 = nn.Dropout2d(p=0.5)
-        self.fc2 = nn.Linear(128, self.num_output)
+
+        self.batch_norm1 = nn.BatchNorm2d(32)
+        self.batch_norm2 = nn.BatchNorm2d(64)
+        
+        self.drop1 = nn.Dropout2d(p=0.2)
+        self.drop2 = nn.Dropout2d(p=0.3)
+
+        self.fc1 = nn.Linear(192, 64)
+        self.fc2 = nn.Linear(64,16)
+        self.fc3 = nn.Linear(16, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -50,7 +57,8 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 1500
+        # self.num_epochs = 1500
+        self.num_epochs = 15
 
         self.train_dataset = None
         self.test_dataset = None
@@ -61,18 +69,23 @@ class MyQLaNet(nn.Module):
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = self.drop1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.conv2(x)
         x = self.conv3(x)
+        x = F.relu(self.batch_norm1(x))
+        x = F.max_pool2d(x, 2)
         x = self.conv4(x)
+        x = F.relu(self.batch_norm2(x))
+        x = self.drop1(x)
         x = self.conv5(x)
         x = self.conv6(x)
         x = self.conv7(x)
-        x = x.view(-1, 704)
+        x = x.view(-1, 192)
         x = F.relu(self.fc1(x))
         x = self.drop2(x)
-        x = self.fc2(x)
-        return F.relu(x)
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        return x
 
     def optimizer(self):
         return self.optim
@@ -91,6 +104,9 @@ class MyQLaNet(nn.Module):
 
     def train_utility_parameters(self):
         return self.batch_size, self.start_epoch, self.num_output, self.best_loss
+
+    def update_best_loss(self, loss):
+        self.best_loss = loss
 
     def update_loss(self):
         return self.epoch_now, self.loss_now

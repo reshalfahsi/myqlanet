@@ -226,7 +226,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         self.predict_df.to_csv(self.predict_csv_file, index=False)
         print("Prediction Data Saved!")
         dlg = AlertDialog(self)
-        dlg.setStatus('saved')
+        dlg.setStatus('saved_prediction')
         dlg.exec_()
 
     def save_train(self):
@@ -370,7 +370,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             end_point = (int(result[1]), int(result[0]))
             # print(start_point, end_point)
             color = (0, 255, 0)
-            thickness = 4
+            thickness = 5
             image = cv2.rectangle(image, start_point,
                                   end_point, color, thickness)
             # resize.process(image, orig_size)

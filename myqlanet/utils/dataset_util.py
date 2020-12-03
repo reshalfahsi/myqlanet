@@ -20,8 +20,8 @@ def split_train_test(dataset):
     csv_file = pd.read_csv(csv_dir, skipinitialspace = True)
     size = csv_file.count()[0]
 
-    ok = '1' * math.ceil(0.6 * size)
-    not_ok = '0' * math.ceil(0.4 * size)
+    ok = '1' * math.ceil(0.8 * size)
+    not_ok = '0' * math.ceil(0.2 * size)
     p = np.random.permutation([int(o) for o in ok] + [ int(n) for n in not_ok]).tolist()
     ok_size = len(ok) + len(not_ok)
     if(ok_size > size):
