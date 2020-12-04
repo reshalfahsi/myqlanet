@@ -27,7 +27,7 @@ class MyQLaNet(nn.Module):
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
-        self.conv5 = nn.Conv2d(512, 256, kernel_size=3, stride=2, padding=1)
+        self.conv5 = nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0)
         self.conv6 = nn.Conv2d(256, 128, kernel_size=3, stride=2, padding=1)
         self.conv7 = nn.Conv2d(128, 64, kernel_size=3, stride=2, padding=1)
 
