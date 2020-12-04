@@ -51,13 +51,13 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 95e-4
-        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=1e-3)
+        self.learning_rate = 5e-5
+        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=0.0)
 
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 150
+        self.num_epochs = 250
 
         self.train_dataset = None
         self.test_dataset = None
