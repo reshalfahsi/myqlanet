@@ -23,23 +23,21 @@ class MyQLaNet(nn.Module):
         self.num_output = 4
 
         ## [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
-        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 8, kernel_size=3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=1)
-        self.conv4 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
-        self.conv5 = nn.Conv2d(64, 32, kernel_size=3, stride=2, padding=1)
-        self.conv6 = nn.Conv2d(32, 16, kernel_size=3, stride=2, padding=1)
-        self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride=2, padding=1)
+        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 32, kernel_size=3, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
+        self.conv5 = nn.Conv2d(512, 256, kernel_size=3, stride=2, padding=1)
+        self.conv6 = nn.Conv2d(256, 128, kernel_size=3, stride=2, padding=1)
+        self.conv7 = nn.Conv2d(128, 64, kernel_size=3, stride=2, padding=1)
 
         self.batch_norm1 = nn.BatchNorm2d(32)
         self.batch_norm2 = nn.BatchNorm2d(64)
         
-        self.drop1 = nn.Dropout2d(p=0.25)
-        self.drop2 = nn.Dropout2d(p=0.35)
+        self.drop1 = nn.Dropout2d(p=0.5)
 
-        self.fc1 = nn.Linear(192, 64)
-        self.fc2 = nn.Linear(64,16)
-        self.fc3 = nn.Linear(16, self.num_output)
+        self.fc1 = nn.Linear(192, 128)
+        self.fc2 = nn.Linear(128, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -51,13 +49,13 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 5e-5
+        self.learning_rate = 4e-4
         self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=0.0)
 
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 250
+        self.num_epochs = 100
 
         self.train_dataset = None
         self.test_dataset = None
@@ -67,25 +65,26 @@ class MyQLaNet(nn.Module):
         self.epoch_now = 0
 
     def forward(self, x):        
+        
         x = self.conv1(x)
-        x = F.avg_pool2d(x, 2)
-        x = self.conv2(x)
-        x = self.conv3(x)
-        x = F.relu(x)
         x = self.batch_norm1(x)
-        x = F.avg_pool2d(x, 2)
-        x = self.conv4(x)
         x = F.relu(x)
+        x = self.conv2(x)
         x = self.batch_norm2(x)
-        x = self.drop1(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = self.conv7(x)
+        x = F.relu(x)
+
+        for _ in range(2):
+            x = self.conv3(x)
+            x = self.conv4(x)
+            x = self.conv5(x)
+            x = self.conv6(x)
+            x = self.conv7(x)
+            x = F.max_pool2d(x, (3, 2), stride=(2, 1))
+
         x = x.view(-1, 192)
         x = F.relu(self.fc1(x))
-        x = self.drop2(x)
+        x = self.drop1(x)
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
         return x
 
     def optimizer(self):
