@@ -79,7 +79,7 @@ class MyQLaNet(nn.Module):
             x = self.conv5(x)
             x = self.conv6(x)
             x = self.conv7(x)
-            x = F.max_pool2d(x, 2, stride=1)
+            x = F.max_pool2d(x, 2, stride=2)
 
         x = x.view(-1, 192)
         x = F.relu(self.fc1(x))
