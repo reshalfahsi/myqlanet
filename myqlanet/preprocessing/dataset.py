@@ -52,7 +52,6 @@ class MaculaDataset(Dataset):
         image = self.ggb.run(image)
         image = image.astype('float32')
         image /= 255.0
-        # image = (image - 127.5)/127.5
         bbox = self.macula_frame.iloc[idx, 1:]
         bbox = np.array(bbox)
         bbox = bbox.astype('float').reshape(-1)

@@ -27,9 +27,9 @@ class MyQLaNet(nn.Module):
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
-        self.conv5 = nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=0)
+        self.conv5 = nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=1)
         self.conv6 = nn.Conv2d(256, 128, kernel_size=3, stride=2, padding=1)
-        self.conv7 = nn.Conv2d(128, 64, kernel_size=3, stride=2, padding=1)
+        self.conv7 = nn.Conv2d(128, 64, kernel_size=1, stride=1, padding=1)
 
         self.batch_norm1 = nn.BatchNorm2d(32)
         self.batch_norm2 = nn.BatchNorm2d(64)
@@ -79,7 +79,7 @@ class MyQLaNet(nn.Module):
             x = self.conv5(x)
             x = self.conv6(x)
             x = self.conv7(x)
-            x = F.max_pool2d(x, (3, 2), stride=(2, 1))
+            x = F.max_pool2d(x, 2, stride=1)
 
         x = x.view(-1, 192)
         x = F.relu(self.fc1(x))

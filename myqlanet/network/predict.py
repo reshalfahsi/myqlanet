@@ -23,7 +23,6 @@ def predict(model, path):
     image = ggb.run(image)
     image = image.astype('float32')
     image /= 255.0
-    # image = (image - 127.5)/127.5
     image_tensor = image.transpose((2, 0, 1))
     if model.isCudaAvailable(): 
         image_tensor = torch.from_numpy(image_tensor).float().to('cuda')
