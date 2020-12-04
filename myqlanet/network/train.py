@@ -53,7 +53,6 @@ def save_checkpoint(state, is_best, filename=''):
     else:
         print ("=> Validation did not improve")
 
-# def train(model, train_dataset, optimizer, train_loader, test_loader, loss_fn, cuda, batch_size, epoch, start_epoch, num_output, path, best_loss):
 def train(model, epoch, path):
     """Perform a full training over dataset"""
     average_time = 0
@@ -75,13 +74,9 @@ def train(model, epoch, path):
         # Forward + Backward + Optimize
         model.optimizer().zero_grad()
 
-        #print(images.shape)
-
         outputs = model(images)
         outputs = outputs.float()
-        #print('Output Size: '+str(outputs.size(0)))
-        #print(target)
-        #print('Target Size: '+str(target.size(0)))
+
         loss = model.loss()(outputs, target)
         # Load loss on CPU
         if cuda:
@@ -108,11 +103,16 @@ def train(model, epoch, path):
             loss.data,
             #accuracy,
             average_time/print_every))  # Average
+
     mean_loss = train_loss/len(train_dataset)
+    
     print('=> Train set: Loss: {:.2f}'.format(mean_loss))
+    print('=> Current Best Loss: {:.2f}'.format(best_loss))
+    
     loss, iou = eval(model, test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
-    print('=> Current Best Loss: {:.2f}'.format(best_loss))
+    print('=> Mean IOU Test set: {:.2f}'.format(iou))
+    
     is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss

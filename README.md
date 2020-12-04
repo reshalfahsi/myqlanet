@@ -37,21 +37,21 @@ Instead of using GUI, you can code from the scratch:
 
 ```python
 
-import myqlanet
+from myqlanet import *
 
-# define the network
-model = myqlanet.MyQLaNet()
+# path to the important config file
+dataset_path = '/path/to/dataset'
+annotation_path = '/path/to/annotation'
+weight_path = '/path/to/weight'
 
-# predict from the given path to weight and its root path
-result = model.predict("/path/to/weight","/root/path/")
+# create MyQLaNet model
+model = MyQLaNet()
 
-# print the result in the form of bounding box data: y lower, x, lower, y upper, x upper 
-print(result)
+# create dataset
+dataset = MaculaDataset(annotation_path, dataset_path)
 
-```
+# training time!
+model.compile(dataset)
+model.fit(weight_path)
 
-Example output:
-
-```
-(15, 100, 135, 220)
 ```
