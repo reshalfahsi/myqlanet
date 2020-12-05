@@ -25,9 +25,9 @@ class MyQLaNet(nn.Module):
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            128, 128, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(128), nn.ReLU(inplace=True)) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
+            72, 72, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(72), nn.ReLU(inplace=True)) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
         self.conv_blocks = []
-        for channel in [(3,16),(16, 32),(32,64),(64,128),(128,256),(256,128)]:
+        for channel in [(3,9),(9, 27),(27,81),(81,243), (243, 144), (144, 72)]:
             self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
 
         self.drop = nn.Dropout2d(p=0.5)
@@ -68,11 +68,11 @@ class MyQLaNet(nn.Module):
         out = [conv(x) for conv in self.encoder_conv]
         out = torch.cat(out,1)
 
-        u = torch.tanh(torch.matmul(out[:,128:256,:,:].clone(),torch.transpose(out[:,256:,:,:].clone(),2,3)))
-        attention =  torch.matmul(u, out[:,:128,:,:].clone())
+        u = torch.tanh(torch.matmul(out[:,72:144,:,:].clone(), torch.transpose(out[:,144:,:,:].clone(),2,3)))
+        attention = torch.matmul(u, out[:,:72,:,:].clone())
         score = F.softmax(attention, dim=1)
 
-        x *= score
+        x = x * score
         x = torch.sum(x,1)
 
         x = self.drop(x)
