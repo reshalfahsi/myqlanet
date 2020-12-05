@@ -25,9 +25,9 @@ class MyQLaNet(nn.Module):
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            72, 72, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(72), nn.ReLU(inplace=True)) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
+            2187, 729, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(729), nn.ReLU()) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
         self.conv_blocks = []
-        for channel in [(3,9),(9, 27),(27,81),(81,243), (243, 144), (144, 72)]:
+        for channel in [(3,9),(9, 27),(27,81),(81,243), (243, 729), (729, 2187)]:
             self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
 
         self.drop = nn.Dropout2d(p=0.5)
@@ -51,7 +51,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 100
+        self.num_epochs = 2
 
         self.train_dataset = None
         self.test_dataset = None
@@ -65,15 +65,13 @@ class MyQLaNet(nn.Module):
         for conv in self.conv_blocks:
             x = conv(x)
         
+        print(x.shape)
+        
         out = [conv(x) for conv in self.encoder_conv]
         out = torch.cat(out,1)
 
-        u = torch.tanh(torch.matmul(out[:,72:144,:,:], torch.transpose(out[:,144:,:,:],2,3)))
-        attention = torch.matmul(u, out[:,:72,:,:])
-        score = F.softmax(attention, dim=1)
-
-        x = x * score
-        x = torch.sum(x,1)
+        x = x + out
+        x = torch.mean(x,1)
 
         x = self.drop(x)
         x = x.view(-1, 1247)
@@ -82,7 +80,7 @@ class MyQLaNet(nn.Module):
         return x
     
     def conv_block(self, in_channel, out_channel):
-        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU(inplace=True))
+        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
         return ret
 
     def optimizer(self):
