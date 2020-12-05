@@ -55,10 +55,6 @@ class MyQLaNet(nn.Module):
         self.iou_now = 0
         self.epoch_now = 0
 
-    def conv_block(self, x, in, out):
-        ret = nn.Sequential(nn.conv2d(in, out, kernel_size=3,strides=2,padding=1), nn.BatchNorm2d(out), nn.ReLU())
-        return ret(x)
-
     def forward(self, x):
 
         for channel in [(3,32),(32,64),(64,128),(128,256)]:
@@ -76,6 +72,10 @@ class MyQLaNet(nn.Module):
         x = x.view(-1, 128)
         x = F.relu(self.fc(x))
         return x
+    
+    def conv_block(self, x, in, out):
+        ret = nn.Sequential(nn.conv2d(in, out, kernel_size=3,strides=2,padding=1), nn.BatchNorm2d(out), nn.ReLU())
+        return ret(x)
 
     def optimizer(self):
         return self.optim
