@@ -100,7 +100,7 @@ def train(model, epoch, path):
             model.max_epoch(),
             i + 1,
             len(train_dataset) // batch_size,
-            loss.data,
+            train_loss/(epoch+1),
             #accuracy,
             average_time/print_every))  # Average
 
