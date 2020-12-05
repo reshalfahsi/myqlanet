@@ -26,15 +26,15 @@ class MyQLaNet(nn.Module):
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            2187, 729, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(729), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
+            3, 1, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
         self.conv_blocks = []
-        for channel in [(3, 9), (9, 27), (27, 81), (81, 243), (243, 729), (729, 2187)]:
+        for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
             self.conv_blocks.append(self.conv_block(
                 channel[0], channel[1]).to(self.device))
 
-        self.drop = nn.Dropout2d(p=0.5)
-        self.fc1 = nn.Linear(1247, 128)
-        self.fc2 = nn.Linear(128, self.num_output)
+        self.drop = nn.Dropout(p=0.5)
+        self.fc1 = nn.Linear(72, 16)
+        self.fc2 = nn.Linear(16, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -71,11 +71,19 @@ class MyQLaNet(nn.Module):
         out = torch.cat(out, 1)
 
         x = x + out
-        x = torch.mean(x, 1)
+        x = F.max_pool2d(x, 2)
 
-        x = self.drop(x)
-        x = x.view(-1, 1247)
+        for conv in self.conv_blocks:
+            x = conv(x)
+
+        out = [conv(x) for conv in self.encoder_conv]
+        out = torch.cat(out, 1)
+
+        x = x + out
+
+        x = x.view(-1, 72)
         x = F.relu(self.fc1(x))
+        x = self.drop(x)
         x = F.relu(self.fc2(x))
         return x
 

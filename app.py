@@ -332,6 +332,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
         else:
             path = os.path.join(
                 self.filenames, self.images_to_predict_names[self.current_predict_idx])
+            print(path)
             result = self.myqlanet.predict(weight_path, path)
             # print(result)
 
