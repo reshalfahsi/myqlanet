@@ -68,13 +68,12 @@ class MyQLaNet(nn.Module):
         out = [conv(x) for conv in self.encoder_conv]
         out = torch.cat(out,1)
 
-        u = torch.tanh(torch.matmul(out[:,256:512,:,:],torch.transpose(out[:,512:,:,:],2,3)))
-        attention =  torch.matmul(u, out[:,:256,:,:])
+        u = torch.tanh(torch.matmul(out[:,128:256,:,:],torch.transpose(out[:,256:,:,:],2,3)))
+        attention =  torch.matmul(u, out[:,:128,:,:])
         score = F.softmax(attention, dim=1)
 
         x *= score
         x = torch.sum(x,1)
-        print(x.shape)
 
         x = self.drop(x)
         x = x.view(-1, 1247)
