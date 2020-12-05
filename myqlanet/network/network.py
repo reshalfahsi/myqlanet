@@ -25,7 +25,7 @@ class MyQLaNet(nn.Module):
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            128, 128, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(128), nn.ReLU()) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
+            128, 128, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(128), nn.ReLU(inplace=True)) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
         self.conv_blocks = []
         for channel in [(3,16),(16, 32),(32,64),(64,128),(128,256),(256,128)]:
             self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
@@ -82,7 +82,7 @@ class MyQLaNet(nn.Module):
         return x
     
     def conv_block(self, in_channel, out_channel):
-        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
+        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU(inplace=True))
         return ret
 
     def optimizer(self):
