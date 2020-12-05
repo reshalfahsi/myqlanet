@@ -22,22 +22,12 @@ class MyQLaNet(nn.Module):
 
         self.num_output = 4
 
-        ## [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
-        self.conv1 = nn.Conv2d(in_channels = 3, out_channels = 32, kernel_size=3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1)
-        self.conv5 = nn.Conv2d(256, 256, kernel_size=1, stride=1, padding=1)
-        self.conv6 = nn.Conv2d(256, 128, kernel_size=3, stride=2, padding=1)
-        self.conv7 = nn.Conv2d(128, 64, kernel_size=1, stride=1, padding=1)
+        # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
+        self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
+            256, 2, kernel_size=k, stride=1, padding=1), nn.BatchNorm2d(2), nn.ReLU()) for k in [1, 3, 5]])
 
-        self.batch_norm1 = nn.BatchNorm2d(32)
-        self.batch_norm2 = nn.BatchNorm2d(64)
-        
-        self.drop1 = nn.Dropout2d(p=0.5)
-
-        self.fc1 = nn.Linear(192, 128)
-        self.fc2 = nn.Linear(128, self.num_output)
+        self.drop = nn.Dropout2d(p=0.5)
+        self.fc = nn.Linear(128, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -49,8 +39,9 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 4e-4
-        self.optim = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=0.0)
+        self.learning_rate = 1e-3
+        self.optim = torch.optim.AdamW(
+            self.parameters(), lr=self.learning_rate, weight_decay=1e-2)
 
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
@@ -64,27 +55,26 @@ class MyQLaNet(nn.Module):
         self.iou_now = 0
         self.epoch_now = 0
 
-    def forward(self, x):        
+    def conv_block(self, x, in, out):
+        ret = nn.Sequential(nn.conv2d(in, out, kernel_size=3,strides=2,padding=1), nn.BatchNorm2d(out), nn.ReLU())
+        return ret(x)
+
+    def forward(self, x):
+
+        for channel in [(3,32),(32,64),(64,128),(128,256)]:
+            x = self.conv_block(x, channel[0], channel[1])
         
-        x = self.conv1(x)
-        x = self.batch_norm1(x)
-        x = F.relu(x)
-        x = self.conv2(x)
-        x = self.batch_norm2(x)
-        x = F.relu(x)
+        s, m, l = [conv(x) for conv in self.encoder_conv]
 
-        for _ in range(2):
-            x = self.conv3(x)
-            x = self.conv4(x)
-            x = self.conv5(x)
-            x = self.conv6(x)
-            x = self.conv7(x)
-            x = F.max_pool2d(x, 2, stride=2)
+        u = F.tanh(torch.matmul(m,l))
+        attention =  torch.matmul(u, s)
+        score = F.softmax(attention)
+        x *= score
+        x = torch.sum(x)
 
-        x = x.view(-1, 192)
-        x = F.relu(self.fc1(x))
-        x = self.drop1(x)
-        x = F.relu(self.fc2(x))
+        x = self.drop(x)
+        x = x.view(-1, 128)
+        x = F.relu(self.fc(x))
         return x
 
     def optimizer(self):
@@ -133,12 +123,12 @@ class MyQLaNet(nn.Module):
 
         train_dataset, test_dataset = dataset_util.split_train_test(dataset)
 
-        if (len(test_dataset) == 0) :
+        if (len(test_dataset) == 0):
             print("Train Dataset size is 0!")
             test_dataset = train_dataset
         self.epoch_now = 0
 
-        self.train_dataset = train_dataset # train_dataset
+        self.train_dataset = train_dataset  # train_dataset
         self.test_dataset = test_dataset  # test_dataset
         self.train_loader = torch.utils.data.DataLoader(
             dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True)

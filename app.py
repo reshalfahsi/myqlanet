@@ -357,10 +357,8 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             resize = ResizeImage()
             image_name = os.path.join(
                 self.filenames, self.images_to_predict_names[self.current_predict_idx])
-            # print(image_name)
             image = cv2.imread(image_name)
             orig_size = (image.shape[0], image.shape[1])
-            # print(image.shape)
             image = crop.run(image)
             resize.process(image, VALID_IMAGE_SIZE)
             image = resize.getResult()
