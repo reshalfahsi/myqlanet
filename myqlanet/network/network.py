@@ -27,14 +27,22 @@ class MyQLaNet(nn.Module):
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
             3, 1, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
+        
         self.conv_blocks = []
-        for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
+
+        # for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
+        for channel in [(3, 8), (8, 16), (16, 32), (32, 64), (64, 32), (32, 16), (16, 8)]:
             self.conv_blocks.append(self.conv_block(
                 channel[0], channel[1]).to(self.device))
+        
+        self.drop1 = nn.Dropout2d(p=0.25)
+        self.fc1 = nn.Linear(704, 128)
+        self.drop2 = nn.Dropout2d(p=0.5)
+        self.fc2 = nn.Linear(128, self.num_output)
 
-        self.drop = nn.Dropout(p=0.5)
-        self.fc1 = nn.Linear(72, 16)
-        self.fc2 = nn.Linear(16, self.num_output)
+        # self.drop = nn.Dropout(p=0.5)
+        # self.fc1 = nn.Linear(72, 16)
+        # self.fc2 = nn.Linear(16, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -46,7 +54,7 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 4e-4
+        self.learning_rate = 1e-3
         self.optim = torch.optim.Adam(
             self.parameters(), lr=self.learning_rate, weight_decay=0.0)
 
@@ -64,6 +72,7 @@ class MyQLaNet(nn.Module):
 
     def forward(self, x):
 
+        '''
         for conv in self.conv_blocks:
             x = conv(x)
 
@@ -85,11 +94,27 @@ class MyQLaNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.drop(x)
         x = F.relu(self.fc2(x))
+        '''
+
+        for idx, conv in enumerate(self.conv_blocks):
+            if(idx == 0):
+                x = F.relu(conv(x))
+            elif(idx == 1):
+                x = self.drop1(F.max_pool2d(F.relu(conv(x)),2))
+            else:
+                x = conv(x)
+        x = x.view(-1, 704)
+        x = F.relu(self.fc1(x))
+        x = self.drop2(x)
+        x = F.relu(self.fc2(x))
+
         return x
 
     def conv_block(self, in_channel, out_channel):
+        #ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,
+        #                              stride=2, padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
         ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,
-                                      stride=2, padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
+                                      stride=2, padding=1))
         return ret
 
     def optimizer(self):
