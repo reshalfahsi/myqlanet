@@ -45,8 +45,8 @@ class MyQLaNet(nn.Module):
 
         self.batch_size = 1
         self.learning_rate = 1e-3
-        self.optim = torch.optim.AdamW(
-            self.parameters(), lr=self.learning_rate, weight_decay=1e-2)
+        self.optim = torch.optim.Adam(
+            self.parameters(), lr=self.learning_rate, weight_decay=0.0)
 
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
@@ -68,8 +68,8 @@ class MyQLaNet(nn.Module):
         out = [conv(x) for conv in self.encoder_conv]
         out = torch.cat(out,1)
 
-        u = torch.tanh(torch.matmul(out[:,72:144,:,:].clone(), torch.transpose(out[:,144:,:,:].clone(),2,3)))
-        attention = torch.matmul(u, out[:,:72,:,:].clone())
+        u = torch.tanh(torch.matmul(out[:,72:144,:,:], torch.transpose(out[:,144:,:,:],2,3)))
+        attention = torch.matmul(u, out[:,:72,:,:])
         score = F.softmax(attention, dim=1)
 
         x = x * score
