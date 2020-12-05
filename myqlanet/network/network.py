@@ -46,7 +46,7 @@ class MyQLaNet(nn.Module):
         self.test_loader = None
 
         self.batch_size = 1
-        self.learning_rate = 1e-3
+        self.learning_rate = 4e-4
         self.optim = torch.optim.Adam(
             self.parameters(), lr=self.learning_rate, weight_decay=0.0)
 
