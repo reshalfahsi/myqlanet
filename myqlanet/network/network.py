@@ -19,15 +19,20 @@ class MyQLaNet(nn.Module):
         super(MyQLaNet, self).__init__()
 
         self.iscuda = torch.cuda.is_available()
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.num_output = 4
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            256, 2, kernel_size=k, stride=1, padding=1), nn.BatchNorm2d(2), nn.ReLU()) for k in [1, 3, 5]])
+            128, 128, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(128), nn.ReLU()) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
+        self.conv_blocks = []
+        for channel in [(3,16),(16, 32),(32,64),(64,128),(128,256),(256,128)]:
+            self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
 
         self.drop = nn.Dropout2d(p=0.5)
-        self.fc = nn.Linear(128, self.num_output)
+        self.fc1 = nn.Linear(1247, 128)
+        self.fc2 = nn.Linear(128, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -57,25 +62,28 @@ class MyQLaNet(nn.Module):
 
     def forward(self, x):
 
-        for channel in [(3,32),(32,64),(64,128),(128,256)]:
-            x = self.conv_block(x, channel[0], channel[1])
+        for conv in self.conv_blocks:
+            x = conv(x)
         
         s, m, l = [conv(x) for conv in self.encoder_conv]
 
-        u = F.tanh(torch.matmul(m,l))
+        u = F.tanh(torch.matmul(m,torch.transpose(l,2,3)))
         attention =  torch.matmul(u, s)
         score = F.softmax(attention)
+
         x *= score
-        x = torch.sum(x)
+        x = torch.sum(x,1)
+        print(x.shape)
 
         x = self.drop(x)
-        x = x.view(-1, 128)
-        x = F.relu(self.fc(x))
+        x = x.view(-1, 1247)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
         return x
     
-    def conv_block(self, x, in_channel, out_channel):
+    def conv_block(self, in_channel, out_channel):
         ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
-        return ret(x)
+        return ret
 
     def optimizer(self):
         return self.optim
