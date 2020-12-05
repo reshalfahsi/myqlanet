@@ -73,8 +73,8 @@ class MyQLaNet(nn.Module):
         x = F.relu(self.fc(x))
         return x
     
-    def conv_block(self, x, in, out):
-        ret = nn.Sequential(nn.conv2d(in, out, kernel_size=3,strides=2,padding=1), nn.BatchNorm2d(out), nn.ReLU())
+    def conv_block(self, x, in_channel, out_channel):
+        ret = nn.Sequential(nn.conv2d(in_channel, out_channel, kernel_size=3,strides=2,padding=1), nn.BatchNorm2d(out), nn.ReLU())
         return ret(x)
 
     def optimizer(self):
