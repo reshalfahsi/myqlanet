@@ -19,16 +19,18 @@ class MyQLaNet(nn.Module):
         super(MyQLaNet, self).__init__()
 
         self.iscuda = torch.cuda.is_available()
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device(
+            "cuda:0" if torch.cuda.is_available() else "cpu")
 
         self.num_output = 4
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
         self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            2187, 729, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(729), nn.ReLU()) for prop in [(1,1,0), (3,1,1), (5,1,2)]])
+            2187, 729, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(729), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
         self.conv_blocks = []
-        for channel in [(3,9),(9, 27),(27,81),(81,243), (243, 729), (729, 2187)]:
-            self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
+        for channel in [(3, 9), (9, 27), (27, 81), (81, 243), (243, 729), (729, 2187)]:
+            self.conv_blocks.append(self.conv_block(
+                channel[0], channel[1]).to(self.device))
 
         self.drop = nn.Dropout2d(p=0.5)
         self.fc1 = nn.Linear(1247, 128)
@@ -64,21 +66,22 @@ class MyQLaNet(nn.Module):
 
         for conv in self.conv_blocks:
             x = conv(x)
-        
+
         out = [conv(x) for conv in self.encoder_conv]
-        out = torch.cat(out,1)
+        out = torch.cat(out, 1)
 
         x = x + out
-        x = torch.mean(x,1)
+        x = torch.mean(x, 1)
 
         x = self.drop(x)
         x = x.view(-1, 1247)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         return x
-    
+
     def conv_block(self, in_channel, out_channel):
-        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,stride=2,padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
+        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,
+                                      stride=2, padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
         return ret
 
     def optimizer(self):
