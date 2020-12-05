@@ -69,7 +69,7 @@ class MyQLaNet(nn.Module):
 
         u = F.tanh(torch.matmul(m,torch.transpose(l,2,3)))
         attention =  torch.matmul(u, s)
-        score = F.softmax(attention)
+        score = F.softmax(attention, dim=1)
 
         x *= score
         x = torch.sum(x,1)
