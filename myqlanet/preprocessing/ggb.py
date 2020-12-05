@@ -17,9 +17,9 @@ class GGB():
         b_ = b_.astype('float32')
         g_ = g_.astype('float32')
         mean = np.mean(b_)
-        b_ /= mean
+        b_ /= (mean + 1.0)
         mean = np.mean(g_)
-        g_ /= mean
+        g_ /= (mean + 1.0)
         b_ = np.clip(b_, 0, 1)
         g_ = np.clip(g_, 0, 1)
         b_ *= 255.0
@@ -37,9 +37,9 @@ class GGB():
         b_ = b_.astype('float32')
         g_ = g_.astype('float32')
         mean = np.mean(b_)
-        b_ /= mean
+        b_ /= (mean + 1.0)
         mean = np.mean(g_)
-        g_ /= mean
+        g_ /= (mean + 1.0)
         b_ = np.clip(b_, 0, 1)
         g_ = np.clip(g_, 0, 1)
         b_ *= 255.0
