@@ -12,10 +12,18 @@ class GGB():
     def process(self):
         ''' opencv format '''
         self.img = cv2.imread(self.path)
-        img_yuv = cv2.cvtColor(self.img.astype('uint8'), cv2.COLOR_BGR2YUV)
-        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-        img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2BGR)
-        b_,g_,_ = cv2.split(img_output)
+        b_, g_, _ = cv2.split(self.img)
+        g_ = cv2.equalizeHist(g_)
+        b_ = b_.astype('float32')
+        g_ = g_.astype('float32')
+        mean = np.mean(b_)
+        b_ /= mean
+        mean = np.mean(g_)
+        g_ /= mean
+        b_ = np.clip(b_, 0, 1)
+        g_ = np.clip(g_, 0, 1)
+        b_ *= 255.0
+        g_ *= 255.0
         self.img = cv2.merge((b_,g_,g_))
     
     def getResult(self):
@@ -23,9 +31,18 @@ class GGB():
 
     def run(self, img):
         ''' skimage format '''
-        img_yuv = cv2.cvtColor(img.astype('uint8'), cv2.COLOR_RGB2YUV)
-        img_yuv[:,:,0] = cv2.equalizeHist(img_yuv[:,:,0])
-        img_output = cv2.cvtColor(img_yuv, cv2.COLOR_YUV2RGB)
-        _, g_, b_ = cv2.split(img_output)
-        ret = cv2.merge((g_,g_,b_))
+        img = cv2.cvtColor(img.astype('uint8'), cv2.COLOR_RGB2BGR)
+        b_, g_, _ = cv2.split(img)
+        g_ = cv2.equalizeHist(g_)
+        b_ = b_.astype('float32')
+        g_ = g_.astype('float32')
+        mean = np.mean(b_)
+        b_ /= mean
+        mean = np.mean(g_)
+        g_ /= mean
+        b_ = np.clip(b_, 0, 1)
+        g_ = np.clip(g_, 0, 1)
+        b_ *= 255.0
+        g_ *= 255.0
+        ret = cv2.merge((g_, g_, b_))
         return ret
