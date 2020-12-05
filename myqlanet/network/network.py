@@ -51,7 +51,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 2
+        self.num_epochs = 100
 
         self.train_dataset = None
         self.test_dataset = None
@@ -64,8 +64,6 @@ class MyQLaNet(nn.Module):
 
         for conv in self.conv_blocks:
             x = conv(x)
-        
-        print(x.shape)
         
         out = [conv(x) for conv in self.encoder_conv]
         out = torch.cat(out,1)
