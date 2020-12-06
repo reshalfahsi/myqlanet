@@ -7,7 +7,26 @@ from ..utils import CropImage, ResizeImage, VALID_IMAGE_FORMATS, VALID_IMAGE_SIZ
 from ..preprocessing import GGB
 from skimage import io
 
-def predict(model, path):
+
+def predict(model, weight_path, path):
+
+    if os.path.isfile(weight_path):
+        try:
+            print("=> loading checkpoint '{}' ...".format(weight_path))
+            if model.isCudaAvailable():
+                checkpoint = torch.load(weight_path)
+            else:
+                # Load GPU model on CPU
+                checkpoint = torch.load(weight_path, map_location=lambda storage, loc: storage)
+
+            model.load_state_dict(checkpoint['state_dict'])
+            print("=> loaded checkpoint '{}' (trained for {} epochs)".format(weight_path, checkpoint['epoch']))
+        except:
+            print("Please Train your Network First!")
+            return     
+    else:
+        print("Please Train your Network First!")
+        return None
 
     model.eval()
 

@@ -30,9 +30,9 @@ class MyQLaNet(nn.Module):
         
         self.conv_blocks = []
 
-        # for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
-        #    self.conv_blocks.append(self.conv_block(
-        #        channel[0], channel[1]).to(self.device))
+        for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
+           self.conv_blocks.append(self.conv_block(
+               channel[0], channel[1]).to(self.device))
         # self.drop = nn.Dropout(p=0.5)
         # self.fc1 = nn.Linear(72, 16)
         # self.fc2 = nn.Linear(16, self.num_output)
@@ -46,10 +46,8 @@ class MyQLaNet(nn.Module):
         self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride = 2, padding=1)
         self.drop1 = nn.Dropout2d(p=0.25)
         self.fc1 = nn.Linear(704, 128)
-        self.drop2 = nn.Dropout2d(p=0.5)
+        self.drop2 = nn.Dropout(p=0.5)
         self.fc2 = nn.Linear(128, self.num_output)
-
-        
 
         self.loss_fn = nn.MSELoss()
 
@@ -68,7 +66,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 100
+        self.num_epochs = 1000
 
         self.train_dataset = None
         self.test_dataset = None
@@ -213,25 +211,6 @@ class MyQLaNet(nn.Module):
         if path == '' and weight_path == '':
             print("Please Insert Path!")
             return None
-        if os.path.isfile(weight_path):
-            try:
-                print("=> loading checkpoint '{}' ...".format(weight_path))
-                if self.iscuda:
-                    checkpoint = torch.load(weight_path)
-                else:
-                    # Load GPU model on CPU
-                    checkpoint = torch.load(
-                        weight_path, map_location=lambda storage, loc: storage)
-                self.start_epoch = checkpoint['epoch']
-                self.best_loss = checkpoint['best_loss']
-                self.load_state_dict(checkpoint['state_dict'])
-                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
-                    weight_path, checkpoint['epoch']))
-            except:
-                print("Please Train your Network First!")
-                return None
-        else:
-            print("Please Train your Network First!")
-            return None
-        ret = predict.predict(self, path)
+        
+        ret = predict.predict(self, weight_path, path)
         return ret
