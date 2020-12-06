@@ -7,7 +7,7 @@ matrix:
       python: "3.5"
 
       before_install:
-        - sudo apt install pyqt5-dev-tools      
+        - sudo apt update      
 
 script:
   - exit 0
