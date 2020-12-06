@@ -1,7 +1,7 @@
 matrix:
   include:
     - os: linux
-      dist: trusty
+      dist: focal
       sudo: required
       language: generic
       python: "3.5"
