@@ -10,6 +10,8 @@ from skimage import io
 
 def predict(model, weight_path, path):
 
+    checkpoint = {}
+
     if os.path.isfile(weight_path):
         try:
             print("=> loading checkpoint '{}' ...".format(weight_path))

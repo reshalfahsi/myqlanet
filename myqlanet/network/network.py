@@ -181,6 +181,7 @@ class MyQLaNet(nn.Module):
 
     def fit(self, path=''):
         success = False
+        checkpoint = {}
         if path == '':
             print("Please Insert Path!")
             return success
