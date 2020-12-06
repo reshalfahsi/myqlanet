@@ -66,7 +66,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 1000
+        self.num_epochs = 100
 
         self.train_dataset = None
         self.test_dataset = None
@@ -124,6 +124,10 @@ class MyQLaNet(nn.Module):
     def optimizer(self):
         return self.optim
 
+    def set_saved_training_parameters(self, _start_epoch, _best_loss):
+        self.start_epoch = _start_epoch
+        self.best_loss = _best_loss
+
     def max_epoch(self):
         return self.num_epochs
 
@@ -132,6 +136,14 @@ class MyQLaNet(nn.Module):
 
     def isCudaAvailable(self):
         return self.iscuda
+    
+    def getNumEpochs(self):
+        return self.num_epochs
+    
+    def set_training_progress_params(self, loss, iou, epochs):
+        self.loss_now = loss
+        self.iou_now = iou
+        self.epoch_now = epochs
 
     def train_utility_dataset(self):
         return self.train_dataset, self.train_loader, self.test_loader
@@ -180,32 +192,13 @@ class MyQLaNet(nn.Module):
             dataset=self.test_dataset, batch_size=self.batch_size, shuffle=False)
 
     def fit(self, path=''):
-        success = False
-        checkpoint = {}
+        
         if path == '':
             print("Please Insert Path!")
-            return success
-        if os.path.isfile(path):
-            try:
-                print("=> loading checkpoint '{}' ...".format(path))
-                if self.iscuda:
-                    checkpoint = torch.load(path)
-                else:
-                    # Load GPU model on CPU
-                    checkpoint = torch.load(
-                        path, map_location=lambda storage, loc: storage)
-                self.start_epoch = checkpoint['epoch']
-                self.best_loss = checkpoint['best_loss']
-                self.load_state_dict(checkpoint['state_dict'])
-                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
-                    path, checkpoint['epoch']))
-            except:
-                print("Training Failed!")
-                return success
-        for epoch in range(self.num_epochs):
-            self.loss_now, self.iou_now = train.train(self, epoch, path)
-            self.epoch_now = epoch
-            success = True
+            return False
+
+        success = train.process(self, path)
+
         return success
 
     def predict(self, weight_path='', path=''):

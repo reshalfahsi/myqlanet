@@ -4,11 +4,15 @@ from ..preprocessing import MaculaDataset
 
 import time
 import math
+import os
 
 from torch.autograd import Variable
 from ..utils import image_util
 
-def eval(model, test_loader, cuda, num_output):
+model =  None
+
+def eval(test_loader, cuda, num_output):
+    global model
     """Eval over test set"""
     model.eval()
     ret_loss = 0
@@ -53,7 +57,42 @@ def save_checkpoint(state, is_best, filename=''):
     else:
         print ("=> Validation did not improve")
 
-def train(model, epoch, path):
+
+def process(_model_, path):
+    global model
+
+    model = _model_
+    success = False
+    checkpoint = {}
+
+    if path == '':
+        print("Please Insert Path!")
+        return success
+    if os.path.isfile(path):
+        try:
+            print("=> loading checkpoint '{}' ...".format(path))
+            if model.isCudaAvailable():
+                checkpoint = torch.load(path)
+            else:
+                # Load GPU model on CPU
+                checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
+                start_epoch = checkpoint['epoch']
+                best_loss = checkpoint['best_loss']
+                model.set_saved_training_parameters(start_epoch, best_loss)
+                model.load_state_dict(checkpoint['state_dict'])
+                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
+                    path, checkpoint['epoch']))
+        except:
+            print("Training Failed!")
+            return success
+
+    for epoch in range(model.getNumEpochs()):
+        loss_now, iou_now = train.train(epoch, path)
+        model.set_training_progress_params(loss_now, iou_now, epoch)
+        success = True
+
+def train(epoch, path):
+    global model
     """Perform a full training over dataset"""
     average_time = 0
     # Model train mode
