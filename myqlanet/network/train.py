@@ -148,7 +148,7 @@ def train(epoch, path):
     print('=> Train set: Loss: {:.2f}'.format(mean_loss))
     print('=> Current Best Loss: {:.2f}'.format(best_loss))
     
-    loss, iou = eval(model, test_loader, cuda, num_output)
+    loss, iou = eval(test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
     print('=> Mean IOU Test set: {:.2f}'.format(iou))
     
