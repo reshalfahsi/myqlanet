@@ -68,7 +68,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 1000
+        self.num_epochs = 100
 
         self.train_dataset = None
         self.test_dataset = None
@@ -117,7 +117,7 @@ class MyQLaNet(nn.Module):
         x = self.drop2(x)
         x = F.relu(self.fc2(x))
         '''
-        
+
         return x
 
     def conv_block(self, in_channel, out_channel):
