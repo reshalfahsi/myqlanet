@@ -33,10 +33,11 @@ class MyQLaNet(nn.Module):
         for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
            self.conv_blocks.append(self.conv_block(
                channel[0], channel[1]).to(self.device))
-        # self.drop = nn.Dropout(p=0.5)
-        # self.fc1 = nn.Linear(72, 16)
-        # self.fc2 = nn.Linear(16, self.num_output)
+        self.drop = nn.Dropout(p=0.5)
+        self.fc1 = nn.Linear(72, 16)
+        self.fc2 = nn.Linear(16, self.num_output)
         
+        '''
         self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
         self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
         self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride = 2, padding=1)
@@ -48,6 +49,7 @@ class MyQLaNet(nn.Module):
         self.fc1 = nn.Linear(704, 128)
         self.drop2 = nn.Dropout(p=0.5)
         self.fc2 = nn.Linear(128, self.num_output)
+        '''
 
         self.loss_fn = nn.MSELoss()
 
@@ -66,7 +68,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 100
+        self.num_epochs = 1000
 
         self.train_dataset = None
         self.test_dataset = None
@@ -77,7 +79,7 @@ class MyQLaNet(nn.Module):
 
     def forward(self, x):
 
-        '''
+        # '''
         for conv in self.conv_blocks:
             x = conv(x)
 
@@ -99,8 +101,9 @@ class MyQLaNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.drop(x)
         x = F.relu(self.fc2(x))
-        '''
+        # '''
 
+        '''
         x = F.relu(self.conv1(x))
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
         x = self.drop1(x)
@@ -113,7 +116,8 @@ class MyQLaNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.drop2(x)
         x = F.relu(self.fc2(x))
-
+        '''
+        
         return x
 
     def conv_block(self, in_channel, out_channel):
