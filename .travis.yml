@@ -1,17 +1,13 @@
 matrix:
   include:
     - os: linux
-      dist: bionic
+      dist: trusty
       sudo: required
       language: generic
       python: "3.5"
-      cache: pip
 
       before_install:
-        # - sudo apt install python3-pip
-        - sudo apt install pyqt5-dev-tools
-        # - sudo pip3 install -r requirements.txt       
+        - sudo apt install pyqt5-dev-tools      
 
 script:
-  - echo "Yeet"
   - exit 0
