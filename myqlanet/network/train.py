@@ -87,7 +87,7 @@ def process(_model_, path):
             return success
 
     for epoch in range(model.getNumEpochs()):
-        loss_now, iou_now = train.train(epoch, path)
+        loss_now, iou_now = train(epoch, path)
         model.set_training_progress_params(loss_now, iou_now, epoch)
         success = True
 
