@@ -90,6 +90,8 @@ def process(_model_, path):
         loss_now, iou_now = train(epoch, path)
         model.set_training_progress_params(loss_now, iou_now, epoch)
         success = True
+    
+    return success
 
 def train(epoch, path):
     global model

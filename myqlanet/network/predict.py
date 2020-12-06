@@ -7,9 +7,12 @@ from ..utils import CropImage, ResizeImage, VALID_IMAGE_FORMATS, VALID_IMAGE_SIZ
 from ..preprocessing import GGB
 from skimage import io
 
+model =  None
 
-def predict(model, weight_path, path):
-
+def predict(_model_, weight_path, path):
+    global model
+    
+    model = _model_
     checkpoint = {}
 
     if os.path.isfile(weight_path):
