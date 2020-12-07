@@ -15,7 +15,7 @@ class MyQLaNet(nn.Module):
     Deep Learning Model for MyQLaNet
     """
 
-    def __init__(self):
+    def __init__(self, legacy_model = False):
         super(MyQLaNet, self).__init__()
 
         self.iscuda = torch.cuda.is_available()
@@ -24,32 +24,30 @@ class MyQLaNet(nn.Module):
 
         self.num_output = 4
 
-        # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
-        self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(
-            3, 1, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
-        
-        self.conv_blocks = []
+        self.legacy = legacy_model
 
-        for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
-           self.conv_blocks.append(self.conv_block(
-               channel[0], channel[1]).to(self.device))
-        self.drop = nn.Dropout(p=0.5)
-        self.fc1 = nn.Linear(72, 16)
-        self.fc2 = nn.Linear(16, self.num_output)
-        
-        '''
-        self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
-        self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride = 2, padding=1)
-        self.conv4 = nn.Conv2d(32, 64, kernel_size=3, stride = 2, padding=1)
-        self.conv5 = nn.Conv2d(64, 32, kernel_size=3, stride = 2, padding=1)
-        self.conv6 = nn.Conv2d(32, 16, kernel_size=3, stride = 2, padding=1)
-        self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride = 2, padding=1)
-        self.drop1 = nn.Dropout2d(p=0.25)
-        self.fc1 = nn.Linear(704, 128)
-        self.drop2 = nn.Dropout(p=0.5)
-        self.fc2 = nn.Linear(128, self.num_output)
-        '''
+        # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
+
+        if not self.legacy:
+            self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(3, 1, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
+            self.conv_blocks = []
+            for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
+                self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
+            self.drop = nn.Dropout(p=0.5)
+            self.fc1 = nn.Linear(72, 16)
+            self.fc2 = nn.Linear(16, self.num_output)
+        else:        
+            self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
+            self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
+            self.conv3 = nn.Conv2d(16, 32, kernel_size=3, stride = 2, padding=1)
+            self.conv4 = nn.Conv2d(32, 64, kernel_size=3, stride = 2, padding=1)
+            self.conv5 = nn.Conv2d(64, 32, kernel_size=3, stride = 2, padding=1)
+            self.conv6 = nn.Conv2d(32, 16, kernel_size=3, stride = 2, padding=1)
+            self.conv7 = nn.Conv2d(16, 8, kernel_size=3, stride = 2, padding=1)
+            self.drop1 = nn.Dropout2d(p=0.25)
+            self.fc1 = nn.Linear(704, 128)
+            self.drop2 = nn.Dropout(p=0.5)
+            self.fc2 = nn.Linear(128, self.num_output)
 
         self.loss_fn = nn.MSELoss()
 
@@ -79,45 +77,41 @@ class MyQLaNet(nn.Module):
 
     def forward(self, x):
 
-        # '''
-        for conv in self.conv_blocks:
-            x = conv(x)
+        if not self.legacy:
+            for conv in self.conv_blocks:
+                x = conv(x)
+            out = [conv(x) for conv in self.encoder_conv]
+            out = torch.cat(out, 1)
 
-        out = [conv(x) for conv in self.encoder_conv]
-        out = torch.cat(out, 1)
+            x = x + out
+            x = F.max_pool2d(x, 2)
 
-        x = x + out
-        x = F.max_pool2d(x, 2)
+            for conv in self.conv_blocks:
+                x = conv(x)
 
-        for conv in self.conv_blocks:
-            x = conv(x)
+            out = [conv(x) for conv in self.encoder_conv]
+            out = torch.cat(out, 1)
 
-        out = [conv(x) for conv in self.encoder_conv]
-        out = torch.cat(out, 1)
+            x = x + out
 
-        x = x + out
-
-        x = x.view(-1, 72)
-        x = F.relu(self.fc1(x))
-        x = self.drop(x)
-        x = F.relu(self.fc2(x))
-        # '''
-
-        '''
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = self.drop1(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
-        x = self.conv6(x)
-        x = self.conv7(x)
-        x = x.view(-1, 704)
-        x = F.relu(self.fc1(x))
-        x = self.drop2(x)
-        x = F.relu(self.fc2(x))
-        '''
-
+            x = x.view(-1, 72)
+            x = F.relu(self.fc1(x))
+            x = self.drop(x)
+            x = F.relu(self.fc2(x))
+        else :
+            x = F.relu(self.conv1(x))
+            x = F.max_pool2d(F.relu(self.conv2(x)), 2)
+            x = self.drop1(x)
+            x = self.conv3(x)
+            x = self.conv4(x)
+            x = self.conv5(x)
+            x = self.conv6(x)
+            x = self.conv7(x)
+            x = x.view(-1, 704)
+            x = F.relu(self.fc1(x))
+            x = self.drop2(x)
+            x = F.relu(self.fc2(x))
+        
         return x
 
     def conv_block(self, in_channel, out_channel):
