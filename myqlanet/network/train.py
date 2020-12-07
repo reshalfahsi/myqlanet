@@ -76,11 +76,11 @@ def process(_model_, path):
             else:
                 # Load GPU model on CPU
                 checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
-                start_epoch = checkpoint['epoch']
-                best_loss = checkpoint['best_loss']
-                model.set_saved_training_parameters(start_epoch, best_loss)
-                model.load_state_dict(checkpoint['state_dict'])
-                print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
+            start_epoch = checkpoint['epoch']
+            best_loss = checkpoint['best_loss']
+            model.set_saved_training_parameters(start_epoch, best_loss)
+            model.load_state_dict(checkpoint['state_dict'])
+            print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
                     path, checkpoint['epoch']))
         except:
             print("Training Failed!")
