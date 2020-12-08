@@ -15,7 +15,7 @@ class MyQLaNet(nn.Module):
     Deep Learning Model for MyQLaNet
     """
 
-    def __init__(self, legacy_model = False):
+    def __init__(self, legacy_model = True):
         super(MyQLaNet, self).__init__()
 
         self.iscuda = torch.cuda.is_available()
