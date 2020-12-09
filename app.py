@@ -303,7 +303,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
             self.tabWidget.setCurrentIndex(self.error_tab_idx[0])
         else:
             dataset = MaculaDataset(dataset_path, self.filenames_train)
-            self.myqlanet.compile(dataset)
+            self.myqlanet.compile(dataset, batch_size=5)
             self.train_signal.emit()
 
     def predict(self):

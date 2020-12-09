@@ -66,7 +66,7 @@ class MyQLaNet(nn.Module):
         self.best_loss = 9.9999999999e9
         self.start_epoch = 0
 
-        self.num_epochs = 1000
+        self.num_epochs = 256
 
         self.train_dataset = None
         self.test_dataset = None
@@ -158,7 +158,9 @@ class MyQLaNet(nn.Module):
     def update_iou(self):
         return self.epoch_now, self.iou_now
 
-    def compile(self, dataset=None, _loss_fn=None, _optimizer=None):
+    def compile(self, dataset=None, batch_size=1, _loss_fn=None, _optimizer=None):
+
+        self.batch_size = batch_size
 
         if _loss_fn is not None:
             self.loss_fn = _loss_fn
