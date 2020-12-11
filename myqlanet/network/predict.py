@@ -18,7 +18,7 @@ def predict(_model_, weight_path, path):
     if os.path.isfile(weight_path):
         try:
             print("=> loading checkpoint '{}' ...".format(weight_path))
-            if model.isCudaAvailable():
+            if model.get_network_parameters('is_cuda'):
                 checkpoint = torch.load(weight_path)
             else:
                 # Load GPU model on CPU
@@ -47,7 +47,7 @@ def predict(_model_, weight_path, path):
     image = ggb.run(image)
 
     image_tensor = image.transpose((2, 0, 1))
-    if model.isCudaAvailable(): 
+    if model.get_network_parameters('is_cuda'): 
         image_tensor = torch.from_numpy(image_tensor).float().to('cuda')
     else:
         image_tensor = torch.from_numpy(image_tensor).float()

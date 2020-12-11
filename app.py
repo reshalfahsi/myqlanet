@@ -117,7 +117,7 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
     def training_process(self):
         self.isTrain = True
 
-        self.max_epoch = self.myqlanet.max_epoch()
+        self.max_epoch = self.myqlanet.get_network_parameters('num_epochs')
 
         if not self.train_thread.is_alive() and not self.thread_called:
             self.train_thread.start()
@@ -142,8 +142,9 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                 self.list_loss = []
                 self.isLastTrain = True
 
-            self.epoch_now, loss = self.myqlanet.update_loss()
-            _, self.iou_now = self.myqlanet.update_iou()
+            self.epoch_now = self.myqlanet.get_network_parameters('epoch_now')
+            loss = self.myqlanet.get_network_parameters('loss_now')
+            self.iou_now = self.myqlanet.get_network_parameters('iou_now')
 
             if(self.epoch_now > self.last_epoch):
                 self.list_loss.append(loss)
@@ -172,7 +173,8 @@ class MyQLaGUI(QMainWindow, Ui_MainWindow):
                     'IOU: {:.3f}'.format(round(self.iou_now, 3))))
                 self.plt.legend(loc='upper left')
                 if self.isLastTrain:
-                    self.epoch_now, loss = self.myqlanet.update_loss()
+                    self.epoch_now = self.myqlanet.get_network_parameters('epoch_now') 
+                    loss = self.myqlanet.get_network_parameters('loss_now')
                     self.list_loss_copy.append(loss)
                     self.percent = float(
                         float(self.epoch_now + 1.0) / float(self.max_epoch)) * 100.0

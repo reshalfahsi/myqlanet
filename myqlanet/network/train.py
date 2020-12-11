@@ -71,14 +71,20 @@ def process(_model_, path):
     if os.path.isfile(path):
         try:
             print("=> loading checkpoint '{}' ...".format(path))
-            if model.isCudaAvailable():
+            if model.get_network_parameters('is_cuda'):
                 checkpoint = torch.load(path)
             else:
                 # Load GPU model on CPU
                 checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
+            
             start_epoch = checkpoint['epoch']
             best_loss = checkpoint['best_loss']
-            model.set_saved_training_parameters(start_epoch, best_loss)
+            
+            # model.set_saved_training_parameters(start_epoch, best_loss)
+
+            model.set_network_parameters('start_epoch', start_epoch)
+            model.set_network_parameters('best_loss', best_loss)
+
             model.load_state_dict(checkpoint['state_dict'])
             print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
                     path, checkpoint['epoch']))
@@ -86,9 +92,13 @@ def process(_model_, path):
             print("Training Failed!")
             return success
 
-    for epoch in range(model.getNumEpochs()):
+    for epoch in range(model.get_network_parameters('num_epochs')):
         loss_now, iou_now = train(epoch, path)
-        model.set_training_progress_params(loss_now, iou_now, epoch)
+        
+        model.set_network_parameters('loss_now', loss_now)
+        model.set_network_parameters('iou_now', iou_now)
+        model.set_network_parameters('epoch_now', epoch)
+
         success = True
     
     return success
@@ -99,9 +109,18 @@ def train(epoch, path):
     average_time = 0
     # Model train mode
     model.train()
-    batch_size, start_epoch, num_output, best_loss = model.train_utility_parameters()
-    train_dataset, train_loader, test_loader = model.train_utility_dataset()
-    cuda = model.isCudaAvailable()
+
+    batch_size = model.get_network_parameters('batch_size')
+    start_epoch = model.get_network_parameters('start_epoch')
+    num_output = model.get_network_parameters('num_output')
+    best_loss = model.get_network_parameters('best_loss')
+
+    train_dataset = model.get_network_parameters('train_dataset')
+    train_loader = model.get_network_parameters('train_loader')
+    test_loader = model.get_network_parameters('test_loader')
+
+    cuda =  model.get_network_parameters('is_cuda')
+
     train_loss = 0
 
     for i, (images, target) in enumerate(train_loader):
@@ -112,18 +131,21 @@ def train(epoch, path):
         target = Variable(target).float()
         if cuda:
             images, target = images.cuda(), target.cuda()
+        
         # Forward + Backward + Optimize
-        model.optimizer().zero_grad()
+        model.get_network_parameters('optimizer').zero_grad()
 
         outputs = model(images)
         outputs = outputs.float()
 
-        loss = model.loss()(outputs, target)
+        loss = model.get_network_parameters('loss_function')(outputs, target)
+
         # Load loss on CPU
         if cuda:
             loss.cpu()
         loss.backward()
-        model.optimizer().step()
+        model.get_network_parameters('optimizer').step()
+
         # Measure elapsed time
         batch_time = time.time() - batch_time
         # Accumulate over batch
@@ -138,7 +160,7 @@ def train(epoch, path):
         if (i + 1) % print_every == 0:
             print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f, Batch time: %f'
             % (epoch + 1,
-            model.max_epoch(),
+            model.get_network_parameters('num_epochs'),
             i + 1,
             len(train_dataset) // batch_size,
             train_loss/(epoch+1),
@@ -157,7 +179,8 @@ def train(epoch, path):
     is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss
-        model.update_best_loss(best_loss)
+        # model.update_best_loss(best_loss)
+        model.set_network_parameters('best_loss')
         # Save checkpoint if is a new best
         save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(), 'best_loss': best_loss}, is_best, path)
     return loss, iou

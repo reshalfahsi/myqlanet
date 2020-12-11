@@ -18,24 +18,24 @@ class MyQLaNet(nn.Module):
     def __init__(self, legacy_model = True):
         super(MyQLaNet, self).__init__()
 
-        self.iscuda = torch.cuda.is_available()
-        self.device = torch.device(
-            "cuda:0" if torch.cuda.is_available() else "cpu")
+        self.__network_parameters = {}
 
-        self.num_output = 4
+        self.__network_parameters['is_cuda'] = torch.cuda.is_available()
+        self.__network_parameters['device'] = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        self.legacy = legacy_model
+        self.__network_parameters['num_output'] = 4
+        self.__network_parameters['legacy'] = legacy_model
 
         # [(W−K+2P)/S]+1, W -> input, K -> kernel_size, P -> padding, S -> stride
 
-        if not self.legacy:
+        if not self.__network_parameters['legacy']:
             self.encoder_conv = nn.ModuleList([nn.Sequential(nn.Conv2d(3, 1, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
             self.conv_blocks = []
             for channel in [(3, 27), (27, 81), (81, 27), (27, 3)]:
-                self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.device))
+                self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(self.__network_parameters['device']))
             self.drop = nn.Dropout(p=0.5)
             self.fc1 = nn.Linear(72, 16)
-            self.fc2 = nn.Linear(16, self.num_output)
+            self.fc2 = nn.Linear(16, self.__network_parameters['num_output'])
         else:        
             self.conv1 = nn.Conv2d(3, 8, kernel_size=3, stride = 2, padding=1)
             self.conv2 = nn.Conv2d(8, 16, kernel_size=3, stride = 2, padding=1)
@@ -47,37 +47,37 @@ class MyQLaNet(nn.Module):
             self.drop1 = nn.Dropout2d(p=0.25)
             self.fc1 = nn.Linear(704, 128)
             self.drop2 = nn.Dropout(p=0.5)
-            self.fc2 = nn.Linear(128, self.num_output)
+            self.fc2 = nn.Linear(128, self.__network_parameters['num_output'])
 
         self.loss_fn = nn.MSELoss()
+        self.__network_parameters['loss_function'] = nn.MSELoss()
 
-        if self.iscuda:
+        if self.__network_parameters['is_cuda']:
             self.cuda()
-            self.loss_fn.cuda()
+            self.__network_parameters['loss_function'].cuda()
 
-        self.train_loader = None
-        self.test_loader = None
+        self.__network_parameters['train_loader'] = None
+        self.__network_parameters['test_loader'] = None
+        
+        self.__network_parameters['batch_size'] = 1
+        self.__network_parameters['learning_rate'] = 1e-32
+        self.__network_parameters['optimizer'] = torch.optim.Adam(self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
 
-        self.batch_size = 1
-        self.learning_rate = 1e-3
-        self.optim = torch.optim.Adam(
-            self.parameters(), lr=self.learning_rate, weight_decay=0.0)
+        self.__network_parameters['best_loss'] = 9.9999999999e9
+        self.__network_parameters['start_epoch'] = 0
 
-        self.best_loss = 9.9999999999e9
-        self.start_epoch = 0
+        self.__network_parameters['num_epochs'] = 256
 
-        self.num_epochs = 256
+        self.__network_parameters['train_dataset'] = None
+        self.__network_parameters['test_dataset'] = None
 
-        self.train_dataset = None
-        self.test_dataset = None
-
-        self.loss_now = 9e6
-        self.iou_now = 0
-        self.epoch_now = 0
+        self.__network_parameters['loss_now'] = 9e6
+        self.__network_parameters['iou_now'] = 0
+        self.__network_parameters['epoch_now'] = 0
 
     def forward(self, x):
 
-        if not self.legacy:
+        if not self.__network_parameters['legacy']:
             for conv in self.conv_blocks:
                 x = conv(x)
             out = [conv(x) for conv in self.encoder_conv]
@@ -119,56 +119,31 @@ class MyQLaNet(nn.Module):
                                      stride=2, padding=1), nn.BatchNorm2d(out_channel), nn.ReLU())
         return ret
 
-    def optimizer(self):
-        return self.optim
+    def get_network_parameters(self, key=''):
+        if key == '':
+            print('Failed to get network parameters')
+            return None
+        
+        return self.__network_parameters[key]
 
-    def set_saved_training_parameters(self, _start_epoch, _best_loss):
-        self.start_epoch = _start_epoch
-        self.best_loss = _best_loss
+    def set_network_parameters(self, key='', value=None):
+        if key == '' or value is None:
+            print("Please insert the key or the value")
+            return None
 
-    def max_epoch(self):
-        return self.num_epochs
-
-    def loss(self):
-        return self.loss_fn
-
-    def isCudaAvailable(self):
-        return self.iscuda
-    
-    def getNumEpochs(self):
-        return self.num_epochs
-    
-    def set_training_progress_params(self, loss, iou, epochs):
-        self.loss_now = loss
-        self.iou_now = iou
-        self.epoch_now = epochs
-
-    def train_utility_dataset(self):
-        return self.train_dataset, self.train_loader, self.test_loader
-
-    def train_utility_parameters(self):
-        return self.batch_size, self.start_epoch, self.num_output, self.best_loss
-
-    def update_best_loss(self, loss):
-        self.best_loss = loss
-
-    def update_loss(self):
-        return self.epoch_now, self.loss_now
-
-    def update_iou(self):
-        return self.epoch_now, self.iou_now
+        self.__network_parameters[key] = value
 
     def compile(self, dataset=None, batch_size=1, _loss_fn=None, _optimizer=None):
 
-        self.batch_size = batch_size
+        self.__network_parameters['batch_size'] = batch_size
 
         if _loss_fn is not None:
-            self.loss_fn = _loss_fn
-            if self.iscuda:
-                self.loss_fn.cuda()
+            self.__network_parameters['loss_function'] = _loss_fn
+            if self.__network_parameters['is_cuda']:
+                self.__network_parameters['loss_function'].cuda()
 
         if _optimizer is not None:
-            self.optim = _optimizer
+            self.__network_parameters['optimizer'] = _optimizer
 
         if dataset is None:
             print("Please insert a valid dataset format.")
@@ -182,14 +157,14 @@ class MyQLaNet(nn.Module):
         if (len(test_dataset) == 0):
             print("Train Dataset size is 0!")
             test_dataset = train_dataset
-        self.epoch_now = 0
+        self.__network_parameters['epoch_now'] = 0
 
-        self.train_dataset = train_dataset  # train_dataset
-        self.test_dataset = test_dataset  # test_dataset
-        self.train_loader = torch.utils.data.DataLoader(
-            dataset=self.train_dataset, batch_size=self.batch_size, shuffle=True)
-        self.test_loader = torch.utils.data.DataLoader(
-            dataset=self.test_dataset, batch_size=self.batch_size, shuffle=False)
+        self.__network_parameters['train_dataset'] = train_dataset  # train_dataset
+        self.__network_parameters['test_dataset'] = test_dataset  # test_dataset
+        self.__network_parameters['train_loader'] = torch.utils.data.DataLoader(
+            dataset=self.__network_parameters['train_dataset'], batch_size=self.__network_parameters['batch_size'], shuffle=True)
+        self.__network_parameters['test_loader'] = torch.utils.data.DataLoader(
+            dataset=self.__network_parameters['test_dataset'], batch_size=self.__network_parameters['batch_size'], shuffle=False)
 
     def fit(self, path=''):
         
