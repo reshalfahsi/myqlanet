@@ -96,7 +96,7 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['best_loss'] = 9.9999999999e9
         self.__network_parameters['start_epoch'] = 0
 
-        self.__network_parameters['num_epochs'] = 256
+        self.__network_parameters['num_epochs'] = 256 if self.__network_parameters['legacy'] else 1000
 
         self.__network_parameters['train_dataset'] = None
         self.__network_parameters['test_dataset'] = None
