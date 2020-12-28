@@ -49,9 +49,8 @@ class MyQLaNet(nn.Module):
             for channel in [(3, 81),(81, 81),(81, 3)]:
                 self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(
                     self.__network_parameters['device']))
-            self.drop = nn.Dropout(p=0.5)
-            self.fc1 = nn.Linear(72, 16)
-            self.fc2 = nn.Linear(16, self.__network_parameters['num_output'])
+            
+            self.fc = nn.Linear(1215, self.__network_parameters['num_output'])
 
         else:
 
@@ -167,11 +166,11 @@ class MyQLaNet(nn.Module):
             x = nn.AdaptiveAvgPool2d((1,1))(x)
             ############################################
 
-            x = x.view(-1, 72)
-            x = F.relu(self.fc1(x))
-            x = self.drop(x)
-            x = F.relu(self.fc2(x))
-
+            ############################################
+            x = x.view(-1, 1215)
+            x = F.relu(self.fc(x))
+            ############################################
+            
         else:
             
             x = F.relu(self.conv1(x))
