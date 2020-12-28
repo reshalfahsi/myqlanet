@@ -9,7 +9,8 @@ import os
 from torch.autograd import Variable
 from ..utils import image_util
 
-model =  None
+model = None
+
 
 def eval(test_loader, cuda, num_output):
     global model
@@ -33,29 +34,31 @@ def eval(test_loader, cuda, num_output):
         if cuda:
             output.cpu()
         # Compute Loss
-        for d in range(0,num_output):
+        for d in range(0, num_output):
             loss += math.sqrt(abs(output[0][d]**2 - target[0][d]**2))
         gt_start_point = (target[0][3], target[0][2])
         gt_end_point = (target[0][1], target[0][0])
         start_point = (output[0][3], output[0][2])
         end_point = (output[0][1], output[0][0])
-        loss /=  num_output
+        loss /= num_output
         ret_loss += loss
-        iou = float(image_util.bb_intersection_over_union((gt_start_point[0], gt_start_point[1], gt_end_point[0], gt_end_point[1]),(start_point[0], start_point[1], end_point[0], end_point[1])))
+        iou = float(image_util.bb_intersection_over_union(
+            (gt_start_point[0], gt_start_point[1], gt_end_point[0], gt_end_point[1]), (start_point[0], start_point[1], end_point[0], end_point[1])))
         ret_iou += iou
     ret_iou /= (float(idx) + 1.0)
     return ret_loss, ret_iou
 
+
 def save_checkpoint(state, is_best, filename=''):
     """Save checkpoint if a new best is achieved"""
     if is_best:
-        print ("=> Saving a new best")
-        if (filename == '') :
-           print('Path Empty!')
-           return None
+        print("=> Saving a new best")
+        if (filename == ''):
+            print('Path Empty!')
+            return None
         torch.save(state, filename)  # save checkpoint
     else:
-        print ("=> Validation did not improve")
+        print("=> Validation did not improve")
 
 
 def process(_model_, path):
@@ -75,11 +78,12 @@ def process(_model_, path):
                 checkpoint = torch.load(path)
             else:
                 # Load GPU model on CPU
-                checkpoint = torch.load(path, map_location=lambda storage, loc: storage)
-            
+                checkpoint = torch.load(
+                    path, map_location=lambda storage, loc: storage)
+
             start_epoch = checkpoint['epoch']
             best_loss = checkpoint['best_loss']
-            
+
             # model.set_saved_training_parameters(start_epoch, best_loss)
 
             model.set_network_parameters('start_epoch', start_epoch)
@@ -87,21 +91,22 @@ def process(_model_, path):
 
             model.load_state_dict(checkpoint['state_dict'])
             print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
-                    path, checkpoint['epoch']))
+                path, checkpoint['epoch']))
         except:
             print("Training Failed!")
             return success
 
     for epoch in range(model.get_network_parameters('num_epochs')):
         loss_now, iou_now = train(epoch, path)
-        
+
         model.set_network_parameters('loss_now', loss_now)
         model.set_network_parameters('iou_now', iou_now)
         model.set_network_parameters('epoch_now', epoch)
 
         success = True
-    
+
     return success
+
 
 def train(epoch, path):
     global model
@@ -119,19 +124,19 @@ def train(epoch, path):
     train_loader = model.get_network_parameters('train_loader')
     test_loader = model.get_network_parameters('test_loader')
 
-    cuda =  model.get_network_parameters('is_cuda')
+    cuda = model.get_network_parameters('is_cuda')
 
     train_loss = 0
 
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         batch_time = time.time()
-        
+
         images = Variable(images).float()
         target = Variable(target).float()
         if cuda:
             images, target = images.cuda(), target.cuda()
-        
+
         # Forward + Backward + Optimize
         model.get_network_parameters('optimizer').zero_grad()
 
@@ -152,37 +157,36 @@ def train(epoch, path):
         average_time += batch_time
         # ### Keep track of metric every batch
         # Accuracy Metric
-        #prediction = outputs.data.max(1)[1]   # first column has actual prob.
+        # prediction = outputs.data.max(1)[1]   # first column has actual prob.
         #accuracy = prediction.eq(target.data).sum() / batch_size * 100
         # Log
         train_loss += loss.data
         print_every = 5
         if (i + 1) % print_every == 0:
-            print ('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f, Batch time: %f'
-            % (epoch + 1,
-            model.get_network_parameters('num_epochs'),
-            i + 1,
-            len(train_dataset) // batch_size,
-            train_loss/(epoch+1),
-            #accuracy,
-            average_time/print_every))  # Average
+            print('Epoch: [%d/%d], Step: [%d/%d], Loss: %.4f, Batch time: %f'
+                  % (epoch + 1,
+                      model.get_network_parameters('num_epochs'),
+                      i + 1,
+                      len(train_dataset) // batch_size,
+                     train_loss/(epoch+1),
+                     # accuracy,
+                     average_time/print_every))  # Average
 
     mean_loss = train_loss/len(train_dataset)
-    
+
     print('=> Train set: Loss: {:.2f}'.format(mean_loss))
     print('=> Current Best Loss: {:.2f}'.format(best_loss))
-    
+
     loss, iou = eval(test_loader, cuda, num_output)
     print('=> Test set: Loss: {:.2f}'.format(loss))
     print('=> Mean IOU Test set: {:.2f}'.format(iou))
-    
+
     is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss
         # model.update_best_loss(best_loss)
         model.set_network_parameters('best_loss', best_loss)
         # Save checkpoint if is a new best
-        save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(), 'best_loss': best_loss}, is_best, path)
+        save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(),
+                         'optimizer_state_dict': model.get_network_parameters('optimizer').state_dict(), 'best_loss': best_loss}, is_best, path)
     return loss, iou
-
-
