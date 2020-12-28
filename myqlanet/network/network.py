@@ -118,6 +118,10 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             x = x + out
 
+            out = [conv(x) for conv in self.encoder_conv1_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
             x = F.max_pool2d(x, 2)
             ############################################
 
@@ -135,6 +139,10 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             x = x + out
 
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
             x = F.max_pool2d(x, 2)
             ############################################
 
@@ -142,6 +150,10 @@ class MyQLaNet(nn.Module):
             out = [conv(x) for conv in self.encoder_conv3]
             out = torch.cat(out, 1)
             x = self.skip_conv3(x)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv3_continuous]
+            out = torch.cat(out, 1)
             x = x + out
 
             out = [conv(x) for conv in self.encoder_conv3_continuous]
@@ -179,7 +191,7 @@ class MyQLaNet(nn.Module):
 
     def inception_block(self, in_channel, out_channel):
         ret = nn.ModuleList([nn.Sequential(nn.Conv2d(in_channel, out_channel//3, kernel_size=prop[0], stride=prop[1], padding=prop[2]), nn.BatchNorm2d(
-                1), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
+                out_channel//3), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
         return ret
 
     def conv_block(self, in_channel, out_channel):
