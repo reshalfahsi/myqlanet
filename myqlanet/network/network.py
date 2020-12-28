@@ -117,10 +117,6 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv1_continuous]
-            out = torch.cat(out, 1)
-            x = x + out
-
             x = F.max_pool2d(x, 2)
             ############################################
 
@@ -128,10 +124,6 @@ class MyQLaNet(nn.Module):
             out = [conv(x) for conv in self.encoder_conv2]
             out = torch.cat(out, 1)
             x = self.skip_conv2(x)
-            x = x + out
-
-            out = [conv(x) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
             x = x + out
 
             out = [conv(x) for conv in self.encoder_conv2_continuous]
@@ -159,10 +151,6 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv3_continuous]
-            out = torch.cat(out, 1)
-            x = x + out
-
             x = nn.AdaptiveAvgPool2d((1,1))(x)
             ############################################
 
@@ -170,7 +158,7 @@ class MyQLaNet(nn.Module):
             x = x.view(-1, 1215)
             x = F.relu(self.fc(x))
             ############################################
-            
+
         else:
             
             x = F.relu(self.conv1(x))
