@@ -86,10 +86,10 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['batch_size'] = 1
         self.__network_parameters['learning_rate'] = 1e-3
 
-        self.__network_parameters['optimizer'] = torch.optim.Adam(
-            self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
-        # self.__network_parameters['optimizer'] = 
-        #    torch.optim.SGD(self.parameters(), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
+        # self.__network_parameters['optimizer'] = torch.optim.Adam(
+        #    self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
+        self.__network_parameters['optimizer'] = torch.optim.SGD(self.parameters(
+        ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
 
         self.__network_parameters['best_loss'] = 9.9999999999e9
         self.__network_parameters['start_epoch'] = 0
@@ -114,35 +114,45 @@ class MyQLaNet(nn.Module):
             ############################################
 
             ############################################
+            res1 = x
             out = [conv(x) for conv in self.encoder_conv1]
             out = torch.cat(out, 1)
-            x = self.skip_conv1(x)
-            x = x + out
+            out = [conv(out) for conv in self.encoder_conv1_continuous]
+            out = torch.cat(out, 1)
+            res1 = self.skip_conv1(res1)
+            x = res1 + out
 
+            res2 = x
             out = [conv(x) for conv in self.encoder_conv1_continuous]
             out = torch.cat(out, 1)
-            x = x + out
-
-            out = [conv(x) for conv in self.encoder_conv1_continuous]
+            out = [conv(out) for conv in self.encoder_conv1_continuous]
             out = torch.cat(out, 1)
-            x = x + out
-
-            x = F.max_pool2d(x, 2)
+            res2 = res2 + res1
+            x = res2 + out
             ############################################
 
             ############################################
+            res3 = x
             out = [conv(x) for conv in self.encoder_conv2]
             out = torch.cat(out, 1)
-            x = self.skip_conv2(x)
-            x = x + out
+            out = [conv(out) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            res3 = self.skip_conv2(res3)
+            res2 = self.skip_conv2(res2)
+            res1 = self.skip_conv2(res1)
+            res3 = res3 + res2
+            res3 = res3 + res1
+            x = res3 + out
 
+            res4 = x
             out = [conv(x) for conv in self.encoder_conv2_continuous]
             out = torch.cat(out, 1)
-            x = x + out
-
-            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = [conv(out) for conv in self.encoder_conv2_continuous]
             out = torch.cat(out, 1)
-            x = x + out
+            res4 = res4 + res3
+            res4 = res4 + res2
+            res4 = res4 + res1
+            x = res4 + out
 
             x = F.max_pool2d(x, 2)
             ############################################
@@ -150,14 +160,14 @@ class MyQLaNet(nn.Module):
             ############################################
             out = [conv(x) for conv in self.encoder_conv3]
             out = torch.cat(out, 1)
+            out = [conv(out) for conv in self.encoder_conv3_continuous]
+            out = torch.cat(out, 1)
             x = self.skip_conv3(x)
             x = x + out
 
             out = [conv(x) for conv in self.encoder_conv3_continuous]
             out = torch.cat(out, 1)
-            x = x + out
-
-            out = [conv(x) for conv in self.encoder_conv3_continuous]
+            out = [conv(out) for conv in self.encoder_conv3_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
