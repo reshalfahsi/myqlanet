@@ -35,15 +35,15 @@ class MyQLaNet(nn.Module):
             
             self.encoder_conv1 = self.inception_block(3, 27).to(self.__network_parameters['device'])
             self.skip_conv1 = nn.Conv2d(3, 27, kernel_size=1, stride=1, padding=0)
-            self.encoder_conv1_continue = self.inception_block(27, 27).to(self.__network_parameters['device'])
+            self.encoder_conv1_continuous = self.inception_block(27, 27).to(self.__network_parameters['device'])
 
             self.encoder_conv2 = self.inception_block(27, 81).to(self.__network_parameters['device'])
             self.skip_conv2 = nn.Conv2d(27, 81, kernel_size=1, stride=1, padding=0)
-            self.encoder_conv2_continue = self.inception_block(81, 81).to(self.__network_parameters['device'])
+            self.encoder_conv2_continuous = self.inception_block(81, 81).to(self.__network_parameters['device'])
 
             self.encoder_conv3 = self.inception_block(81, 243).to(self.__network_parameters['device'])
             self.skip_conv3 = nn.Conv2d(81, 243, kernel_size=1, stride=1, padding=0)
-            self.encoder_conv3_continue = self.inception_block(243, 243).to(self.__network_parameters['device'])
+            self.encoder_conv3_continuous = self.inception_block(243, 243).to(self.__network_parameters['device'])
             
             self.conv_blocks = []
             for channel in [(3, 81),(81, 81),(81, 3)]:
@@ -110,11 +110,19 @@ class MyQLaNet(nn.Module):
             x = self.skip_conv1(x)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv1_continue]
+            out = [conv(x) for conv in self.encoder_conv1_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv1_continue]
+            out = [conv(x) for conv in self.encoder_conv1_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv1_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv1_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
@@ -127,11 +135,19 @@ class MyQLaNet(nn.Module):
             x = self.skip_conv2(x)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv2_continue]
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv2_continue]
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
@@ -144,11 +160,19 @@ class MyQLaNet(nn.Module):
             x = self.skip_conv3(x)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv3_continue]
+            out = [conv(x) for conv in self.encoder_conv3_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
-            out = [conv(x) for conv in self.encoder_conv3_continue]
+            out = [conv(x) for conv in self.encoder_conv3_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv3_continuous]
+            out = torch.cat(out, 1)
+            x = x + out
+
+            out = [conv(x) for conv in self.encoder_conv3_continuous]
             out = torch.cat(out, 1)
             x = x + out
 
