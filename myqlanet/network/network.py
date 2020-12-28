@@ -164,7 +164,7 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             x = x + out
 
-            x = nn.AdaptiveAvgPool2d((1,1))
+            x = nn.AdaptiveAvgPool2d((1,1))(x)
             ############################################
 
             x = x.view(-1, 72)
