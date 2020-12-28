@@ -169,7 +169,7 @@ def train(epoch, path):
                       model.get_network_parameters('num_epochs'),
                       i + 1,
                       len(train_dataset) // batch_size,
-                     train_loss/(epoch+1),
+                     train_loss/(i + 1),
                      # accuracy,
                      average_time/print_every))  # Average
 
