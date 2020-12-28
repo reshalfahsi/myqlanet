@@ -84,12 +84,14 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['test_loader'] = None
 
         self.__network_parameters['batch_size'] = 1
-        self.__network_parameters['learning_rate'] = 1e-1
+        self.__network_parameters['learning_rate'] = 1e-3 if self.__network_parameters['legacy'] else 1e-1
 
-        # self.__network_parameters['optimizer'] = torch.optim.Adam(
-        #    self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
-        self.__network_parameters['optimizer'] = torch.optim.SGD(self.parameters(
-        ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
+        if self.__network_parameters['legacy']:
+            self.__network_parameters['optimizer'] = torch.optim.Adam(
+                self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
+        else:
+            self.__network_parameters['optimizer'] = torch.optim.SGD(self.parameters(
+            ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
 
         self.__network_parameters['best_loss'] = 9.9999999999e9
         self.__network_parameters['start_epoch'] = 0
@@ -222,7 +224,7 @@ class MyQLaNet(nn.Module):
 
     def compile(self, dataset=None, batch_size=1, _loss_fn=None, _optimizer=None):
 
-        self.__network_parameters['batch_size'] = batch_size
+        # self.__network_parameters['batch_size'] = batch_size
 
         if _loss_fn is not None:
             self.__network_parameters['loss_function'] = _loss_fn
