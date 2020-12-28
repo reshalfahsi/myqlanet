@@ -90,6 +90,7 @@ def process(_model_, path):
             model.set_network_parameters('best_loss', best_loss)
 
             model.load_state_dict(checkpoint['state_dict'])
+            model.get_network_parameters('optimizer').load_state_dict(checkpoint['optimizer_state_dict'])
             print("=> loaded checkpoint '{}' (trained for {} epochs)".format(
                 path, checkpoint['epoch']))
         except:
