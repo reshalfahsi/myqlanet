@@ -50,7 +50,7 @@ class MyQLaNet(nn.Module):
                 self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(
                     self.__network_parameters['device']))
             
-            self.fc = nn.Linear(1215, self.__network_parameters['num_output'])
+            self.fc = nn.Linear(243, self.__network_parameters['num_output'])
 
         else:
 
@@ -155,7 +155,7 @@ class MyQLaNet(nn.Module):
             ############################################
 
             ############################################
-            x = x.view(-1, 1215)
+            x = x.view(-1, 243)
             x = F.relu(self.fc(x))
             ############################################
 
