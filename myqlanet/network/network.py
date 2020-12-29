@@ -45,16 +45,23 @@ class MyQLaNet(nn.Module):
             self.encoder_conv2_continuous = self.inception_block(
                 81, 81).to(self.__network_parameters['device'])
 
+            '''
             self.encoder_conv3 = self.inception_block(
                 81, 243).to(self.__network_parameters['device'])
             self.skip_conv3 = nn.Conv2d(
                 81, 243, kernel_size=1, stride=1, padding=0)
             self.encoder_conv3_continuous = self.inception_block(
                 243, 243).to(self.__network_parameters['device'])
+            '''
 
             self.conv_blocks = []
             for channel in [(3, 81), (81, 81), (81, 3)]:
-                self.conv_blocks.append(self.conv_block(channel[0], channel[1]).to(
+                self.conv_blocks.append(self.conv_block(channel[0], channel[1], 3, 2, 1).to(
+                    self.__network_parameters['device']))
+
+            self.conv_blocks_continuous = []
+            for channel in [(81, 128), (128, 128), (128, 256)]:
+                self.conv_blocks_continuous.append(self.conv_block(channel[0], channel[1], 3, 1, 1).to(
                     self.__network_parameters['device']))
 
             self.fc = nn.Linear(243, self.__network_parameters['num_output'])
@@ -114,7 +121,7 @@ class MyQLaNet(nn.Module):
 
             x = F.max_pool2d(x, 2)
             ############################################
-
+            #                                          #
             ############################################
             res1 = x
             out = [conv(x) for conv in self.encoder_conv1]
@@ -131,9 +138,7 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             res2 = res2 + res1
             x = res2 + out
-            ############################################
-
-            ############################################
+            
             res3 = x
             out = [conv(x) for conv in self.encoder_conv2]
             out = torch.cat(out, 1)
@@ -158,8 +163,9 @@ class MyQLaNet(nn.Module):
 
             x = F.max_pool2d(x, 2)
             ############################################
-
+            #                                          #
             ############################################
+            '''
             out = [conv(x) for conv in self.encoder_conv3]
             out = torch.cat(out, 1)
             out = [conv(out) for conv in self.encoder_conv3_continuous]
@@ -172,10 +178,14 @@ class MyQLaNet(nn.Module):
             out = [conv(out) for conv in self.encoder_conv3_continuous]
             out = torch.cat(out, 1)
             x = x + out
+            '''
+
+            for conv in self.conv_blocks_continuous:
+                x = conv(x)
 
             x = nn.AdaptiveAvgPool2d((1, 1))(x)
             ############################################
-
+            #                                          #
             ############################################
             x = x.view(-1, 243)
             x = F.relu(self.fc(x))
@@ -203,9 +213,9 @@ class MyQLaNet(nn.Module):
             out_channel//3), nn.ReLU()) for prop in [(1, 1, 0), (3, 1, 1), (5, 1, 2)]])
         return ret
 
-    def conv_block(self, in_channel, out_channel):
-        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=3,
-                                      stride=2, padding=0), nn.BatchNorm2d(out_channel), nn.ReLU())
+    def conv_block(self, in_channel, out_channel, kernel_size=3, stride=2, padding=0):
+        ret = nn.Sequential(nn.Conv2d(in_channel, out_channel, kernel_size=kernel_size,
+                                      stride=stride, padding=padding), nn.BatchNorm2d(out_channel), nn.ReLU())
         return ret
 
     def get_network_parameters(self, key=''):
