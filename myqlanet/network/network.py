@@ -91,7 +91,7 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['test_loader'] = None
 
         self.__network_parameters['batch_size'] = 1
-        self.__network_parameters['learning_rate'] = 1e-3 if self.__network_parameters['legacy'] else 1e-1
+        self.__network_parameters['learning_rate'] = 1e-3 #if self.__network_parameters['legacy'] else 1e-1
 
         adam = torch.optim.Adam(self.parameters(
         ), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
