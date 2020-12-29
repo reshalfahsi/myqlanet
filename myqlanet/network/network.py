@@ -60,11 +60,11 @@ class MyQLaNet(nn.Module):
                     self.__network_parameters['device']))
 
             self.conv_blocks_continuous = []
-            for channel in [(81, 128), (128, 128), (128, 256)]:
+            for channel in [(81, 128), (128, 256), (256, 512)]:
                 self.conv_blocks_continuous.append(self.conv_block(channel[0], channel[1], 3, 1, 1).to(
                     self.__network_parameters['device']))
 
-            self.fc = nn.Linear(243, self.__network_parameters['num_output'])
+            self.fc = nn.Linear(512, self.__network_parameters['num_output'])
 
         else:
 
@@ -103,7 +103,7 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['best_loss'] = 9.9999999999e9
         self.__network_parameters['start_epoch'] = 0
 
-        self.__network_parameters['num_epochs'] = 256 if self.__network_parameters['legacy'] else 1000
+        self.__network_parameters['num_epochs'] = 256 # if self.__network_parameters['legacy'] else 1000
 
         self.__network_parameters['train_dataset'] = None
         self.__network_parameters['test_dataset'] = None
@@ -187,7 +187,7 @@ class MyQLaNet(nn.Module):
             ############################################
             #                                          #
             ############################################
-            x = x.view(-1, 243)
+            x = x.view(-1, 512)
             x = F.relu(self.fc(x))
             ############################################
 
