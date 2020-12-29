@@ -93,17 +93,25 @@ class MyQLaNet(nn.Module):
         self.__network_parameters['batch_size'] = 1
         self.__network_parameters['learning_rate'] = 1e-3 if self.__network_parameters['legacy'] else 1e-1
 
-        if self.__network_parameters['legacy']:
-            self.__network_parameters['optimizer'] = torch.optim.Adam(
-                self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
-        else:
-            self.__network_parameters['optimizer'] = torch.optim.SGD(self.parameters(
-            ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
+        adam = torch.optim.Adam(self.parameters(
+        ), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
+        sgd = torch.optim.SGD(self.parameters(
+        ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
+
+        self.__network_parameters['optimizer'] = adam #if self.__network_parameters['legacy'] else sgd
+
+        # if self.__network_parameters['legacy']:
+        #     self.__network_parameters['optimizer'] = torch.optim.Adam(
+        #         self.parameters(), lr=self.__network_parameters['learning_rate'], weight_decay=0.0)
+        # else:
+        #     self.__network_parameters['optimizer'] = torch.optim.SGD(self.parameters(
+        #     ), lr=self.__network_parameters['learning_rate'], momentum=0.9, nesterov=True)
 
         self.__network_parameters['best_loss'] = 9.9999999999e9
         self.__network_parameters['start_epoch'] = 0
 
-        self.__network_parameters['num_epochs'] = 256 # if self.__network_parameters['legacy'] else 1000
+        
+        self.__network_parameters['num_epochs'] = 256 #if self.__network_parameters['legacy'] else 1000
 
         self.__network_parameters['train_dataset'] = None
         self.__network_parameters['test_dataset'] = None
@@ -138,7 +146,7 @@ class MyQLaNet(nn.Module):
             out = torch.cat(out, 1)
             res2 = res2 + res1
             x = res2 + out
-            
+
             res3 = x
             out = [conv(x) for conv in self.encoder_conv2]
             out = torch.cat(out, 1)
