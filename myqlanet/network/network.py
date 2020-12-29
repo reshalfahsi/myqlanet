@@ -53,7 +53,7 @@ class MyQLaNet(nn.Module):
             self.skip_conv3 = nn.Conv2d(
                 81, 243, kernel_size=1, stride=1, padding=0)
             self.encoder_conv3_continuous = self.inception_block(
-                243, 243).to(self.__network_parameters['device'])
+                81, 243).to(self.__network_parameters['device'])
             # '''
 
             self.conv_blocks = []
