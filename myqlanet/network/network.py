@@ -56,15 +56,33 @@ class MyQLaNet(nn.Module):
                 243, 243).to(self.__network_parameters['device'])
             # '''
 
-            self.conv_blocks = []
-            for channel in [(3, 9), (9, 9), (9, 27)]:
-                self.conv_blocks.append(self.conv_block(channel[0], channel[1], 3, 2, 0).to(
-                    self.__network_parameters['device']))
+            self.conv_block1 = self.conv_block(3, 9, 3, 2, 0).to(
+                self.__network_parameters['device'])
+            self.conv_block2 = self.conv_block(9, 9, 3, 2, 0).to(
+                self.__network_parameters['device'])
+            self.conv_block3 = self.conv_block(9, 27, 3, 2, 0).to(
+                self.__network_parameters['device'])
 
-            self.conv_blocks_continuous = []
-            for channel in [(243, 256), (256, 256), (256, 512)]:
-                self.conv_blocks_continuous.append(self.conv_block(channel[0], channel[1], 3, 1, 1).to(
-                    self.__network_parameters['device']))
+            # self.conv_blocks = []
+            # for channel in [(3, 9), (9, 9), (9, 27)]:
+            #     self.conv_blocks.append(self.conv_block(channel[0], channel[1], 3, 2, 0).to(
+            #         self.__network_parameters['device']))
+
+            self.conv_blocks_continuous_1 = self.conv_block(
+                243, 256, 3, 1, 1).to(self.__network_parameters['device'])
+            self.conv_blocks_continuous_2 = self.conv_block(
+                256, 256, 3, 1, 1).to(self.__network_parameters['device'])
+            self.conv_blocks_continuous_3 = self.conv_block(
+                256, 512, 3, 1, 1).to(self.__network_parameters['device'])
+
+            self.max_pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+            self.max_pool2 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+            self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
+
+            # self.conv_blocks_continuous = []
+            # for channel in [(243, 256), (256, 256), (256, 512)]:
+            #     self.conv_blocks_continuous.append(self.conv_block(channel[0], channel[1], 3, 1, 1).to(
+            #         self.__network_parameters['device']))
 
             self.fc1 = nn.Linear(512, 128)
             self.fc2 = nn.Linear(128, self.__network_parameters['num_output'])
@@ -129,10 +147,14 @@ class MyQLaNet(nn.Module):
 
         if not self.__network_parameters['legacy']:
             ############################################
-            for conv in self.conv_blocks:
-                x = conv(x)
+            # for conv in self.conv_blocks:
+            #     x = conv(x)
 
-            x = F.max_pool2d(x, 2)
+            x = self.conv_block1(x)
+            x = self.conv_block2(x)
+            x = self.conv_block3(x)
+
+            x = self.max_pool1(x)
             ############################################
             #                                          #
             ############################################
@@ -175,7 +197,7 @@ class MyQLaNet(nn.Module):
             res4 = res4 + res1
             x = res4 + out
 
-            x = F.max_pool2d(x, 2)
+            x = self.max_pool2(x)
             # '''
             ############################################
             #                                          #
@@ -195,10 +217,15 @@ class MyQLaNet(nn.Module):
             x = x + out
             # '''
 
-            for conv in self.conv_blocks_continuous:
-                x = conv(x)
+            # for conv in self.conv_blocks_continuous:
+            #     x = conv(x)
 
-            x = nn.AdaptiveAvgPool2d((1, 1))(x)
+            x = self.conv_blocks_continuous_1(x)
+            x = self.conv_blocks_continuous_2(x)
+            x = self.conv_blocks_continuous_3(x)
+
+            # x = nn.AdaptiveAvgPool2d((1, 1))(x)
+            x = self.avg_pool(x)
             ############################################
             #                                          #
             ############################################
