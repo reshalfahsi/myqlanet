@@ -75,8 +75,7 @@ class MyQLaNet(nn.Module):
             self.conv_blocks_continuous_3 = self.conv_block(
                 256, 512, 3, 1, 1).to(self.__network_parameters['device'])
 
-            self.max_pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-            self.max_pool2 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+            self.max_pool = nn.MaxPool2d(2)
             self.avg_pool = nn.AdaptiveAvgPool2d((1, 1))
 
             # self.conv_blocks_continuous = []
@@ -154,7 +153,7 @@ class MyQLaNet(nn.Module):
             x = self.conv_block2(x)
             x = self.conv_block3(x)
 
-            x = self.max_pool1(x)
+            x = self.max_pool(x)
             ############################################
             #                                          #
             ############################################
@@ -197,8 +196,36 @@ class MyQLaNet(nn.Module):
             res4 = res4 + res1
             x = res4 + out
 
-            x = self.max_pool2(x)
+            x = self.max_pool(x)
             # '''
+            ############################################
+            #                                          #
+            ############################################
+            res1 = x
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            out = [conv(out) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            x = res1 + out
+
+            res2 = x
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            out = [conv(out) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            res2 = res2 + res1
+            x = res2 + out
+
+            res3 = x
+            out = [conv(x) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            out = [conv(out) for conv in self.encoder_conv2_continuous]
+            out = torch.cat(out, 1)
+            res3 = res3 + res1
+            res3 = res3 + res2
+            x = res3 + out
+
+            x = self.max_pool(x)
             ############################################
             #                                          #
             ############################################
