@@ -49,16 +49,13 @@ def eval(test_loader, cuda, num_output):
     return ret_loss, ret_iou
 
 
-def save_checkpoint(state, is_best, filename=''):
+def save_checkpoint(state, filename=''):
     """Save checkpoint if a new best is achieved"""
-    if is_best:
-        print("=> Saving a new best")
-        if (filename == ''):
-            print('Path Empty!')
-            return None
-        torch.save(state, filename)  # save checkpoint
-    else:
-        print("=> Validation did not improve")
+    if (filename == ''):
+        print('Path Empty!')
+        return None
+    torch.save(state, filename)  # save checkpoint
+    print("=> Saving a new best")
 
 
 def process(_model_, path):
@@ -83,8 +80,6 @@ def process(_model_, path):
 
             start_epoch = checkpoint['epoch']
             best_loss = checkpoint['best_loss']
-
-            # model.set_saved_training_parameters(start_epoch, best_loss)
 
             model.set_network_parameters('start_epoch', start_epoch)
             model.set_network_parameters('best_loss', best_loss)
@@ -154,12 +149,15 @@ def train(epoch, path):
 
         # Measure elapsed time
         batch_time = time.time() - batch_time
+
         # Accumulate over batch
         average_time += batch_time
+        
         # ### Keep track of metric every batch
         # Accuracy Metric
         # prediction = outputs.data.max(1)[1]   # first column has actual prob.
-        #accuracy = prediction.eq(target.data).sum() / batch_size * 100
+        # accuracy = prediction.eq(target.data).sum() / batch_size * 100
+        
         # Log
         train_loss += loss.data
         print_every = 5
@@ -185,9 +183,8 @@ def train(epoch, path):
     is_best = bool(loss <= best_loss)
     if is_best:
         best_loss = loss
-        # model.update_best_loss(best_loss)
         model.set_network_parameters('best_loss', best_loss)
-        # Save checkpoint if is a new best
+        # Save checkpoint
         save_checkpoint({'epoch': start_epoch + epoch + 1, 'state_dict': model.state_dict(),
-                         'optimizer_state_dict': model.get_network_parameters('optimizer').state_dict(), 'best_loss': best_loss}, is_best, path)
+                         'optimizer_state_dict': model.get_network_parameters('optimizer').state_dict(), 'best_loss': best_loss}, path)
     return loss, iou
