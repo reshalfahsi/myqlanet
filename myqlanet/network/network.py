@@ -201,31 +201,31 @@ class MyQLaNet(nn.Module):
             ############################################
             #                                          #
             ############################################
-            res1 = x
-            out = [conv(x) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            out = [conv(out) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            x = res1 + out
+            # res1 = x
+            # out = [conv(x) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # out = [conv(out) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # x = res1 + out
 
-            res2 = x
-            out = [conv(x) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            out = [conv(out) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            res2 = res2 + res1
-            x = res2 + out
+            # res2 = x
+            # out = [conv(x) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # out = [conv(out) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # res2 = res2 + res1
+            # x = res2 + out
 
-            res3 = x
-            out = [conv(x) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            out = [conv(out) for conv in self.encoder_conv2_continuous]
-            out = torch.cat(out, 1)
-            res3 = res3 + res1
-            res3 = res3 + res2
-            x = res3 + out
+            # res3 = x
+            # out = [conv(x) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # out = [conv(out) for conv in self.encoder_conv2_continuous]
+            # out = torch.cat(out, 1)
+            # res3 = res3 + res1
+            # res3 = res3 + res2
+            # x = res3 + out
 
-            x = self.max_pool(x)
+            # x = self.max_pool(x)
             ############################################
             #                                          #
             ############################################
