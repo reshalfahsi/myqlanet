@@ -86,7 +86,6 @@ class MyQLaNet(nn.Module):
             self.drop2 = nn.Dropout(p=0.5)
             self.fc2 = nn.Linear(128, self.__network_parameters['num_output'])
 
-        self.loss_fn = nn.MSELoss()
         self.__network_parameters['loss_function'] = nn.MSELoss()
 
         if self.__network_parameters['is_cuda']:
